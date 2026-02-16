@@ -6,6 +6,7 @@ pub mod checks;
 pub mod accounts;
 pub mod programs;
 pub mod context;
+pub mod error;
 pub mod prelude;
 
 // Example program ID for the example module

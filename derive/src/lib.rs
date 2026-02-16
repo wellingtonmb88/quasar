@@ -2,7 +2,7 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
     parse::{Parse, ParseStream},
-    parse_macro_input, Data, DeriveInput, FnArg, Fields, ItemFn, LitInt, Token, Type,
+    parse_macro_input, Data, DeriveInput, FnArg, Fields, ItemFn, LitInt, Pat, Token, Type,
 };
 
 #[proc_macro_derive(Accounts)]
@@ -90,12 +90,21 @@ pub fn instruction(attr: TokenStream, item: TokenStream) -> TokenStream {
     let param_name = &first_arg.pat;
     let param_type = &first_arg.ty;
 
-    // Replace first param with context: Context
-    *func.sig.inputs.first_mut().unwrap() = syn::parse_quote!(mut context: Context);
+    // Collect remaining params (instruction data fields)
+    let remaining: Vec<_> = func.sig.inputs.iter().skip(1).filter_map(|arg| {
+        match arg {
+            FnArg::Typed(pt) => Some(pt.clone()),
+            _ => None,
+        }
+    }).collect();
+
+    // Replace all params with just context: Context
+    func.sig.inputs = syn::punctuated::Punctuated::new();
+    func.sig.inputs.push(syn::parse_quote!(mut context: Context));
 
     // Prepend: discriminator check + ctx construction
     let stmts = std::mem::take(&mut func.block.stmts);
-    func.block.stmts = [
+    let mut new_stmts: Vec<syn::Stmt> = vec![
         syn::parse_quote!(
             if context.data.first() != Some(&#discriminator) {
                 return Err(ProgramError::InvalidInstructionData);
@@ -107,10 +116,44 @@ pub fn instruction(attr: TokenStream, item: TokenStream) -> TokenStream {
         syn::parse_quote!(
             let #param_name: #param_type = Ctx::new(context)?;
         ),
-    ]
-    .into_iter()
-    .chain(stmts)
-    .collect();
+    ];
+
+    // Deserialize instruction data: repr(C) + zero-copy pointer cast
+    if !remaining.is_empty() {
+        let field_names: Vec<syn::Ident> = remaining.iter().map(|pt| {
+            match &*pt.pat {
+                Pat::Ident(pat_ident) => pat_ident.ident.clone(),
+                _ => panic!("#[instruction] parameters must be simple identifiers"),
+            }
+        }).collect();
+
+        let field_types: Vec<&Type> = remaining.iter().map(|pt| &*pt.ty).collect();
+
+        new_stmts.push(syn::parse_quote!(
+            #[repr(C)]
+            struct InstructionData {
+                #(#field_names: #field_types,)*
+            }
+        ));
+
+        new_stmts.push(syn::parse_quote!(
+            if #param_name.data.len() < core::mem::size_of::<InstructionData>() {
+                return Err(ProgramError::InvalidInstructionData);
+            }
+        ));
+
+        new_stmts.push(syn::parse_quote!(
+            let __instruction_data = unsafe { &*(#param_name.data.as_ptr() as *const InstructionData) };
+        ));
+
+        for name in &field_names {
+            new_stmts.push(syn::parse_quote!(
+                let #name = __instruction_data.#name;
+            ));
+        }
+    }
+
+    func.block.stmts = new_stmts.into_iter().chain(stmts).collect();
 
     quote!(#func).into()
 }
@@ -147,6 +190,16 @@ pub fn account(attr: TokenStream, item: TokenStream) -> TokenStream {
             const OWNER: Address = crate::ID;
         }
 
+        impl AccountCheck for #name {
+            #[inline(always)]
+            fn check(view: &AccountView) -> Result<(), ProgramError> {
+                if unsafe { *view.borrow_unchecked().get_unchecked(0) } != #discriminator {
+                    return Err(ProgramError::InvalidAccountData);
+                }
+                Ok(())
+            }
+        }
+
         impl QuasarAccount for #name {
             #[inline(always)]
             fn deserialize(data: &[u8]) -> Result<Self, ProgramError> {
@@ -159,45 +212,47 @@ pub fn account(attr: TokenStream, item: TokenStream) -> TokenStream {
             }
         }
 
-        impl core::ops::Deref for Account<#name> {
-            type Target = #name;
-
-            #[inline(always)]
-            fn deref(&self) -> &Self::Target {
-                unsafe { &*(self.to_account_view().borrow_unchecked().as_ptr().add(1) as *const #name) }
-            }
-        }
-
         impl #name {
             #[inline(always)]
-            pub fn init(self, account: &mut Initialize<Self>, payer: &AccountView, rent: &Rent) -> Result<(), ProgramError> {
+            pub fn init(self, account: &mut Initialize<Self>, payer: &AccountView, rent: Option<&Rent>) -> Result<(), ProgramError> {
                 self.init_signed(account, payer, rent, &[])
             }
 
             #[inline(always)]
-            pub fn init_signed(self, account: &mut Initialize<Self>, payer: &AccountView, rent: &Rent, signers: &[pinocchio::cpi::Signer]) -> Result<(), ProgramError> {
-                let lamports = account.to_account_view().lamports();
-                let rent_exempt_lamports = rent.get()?.try_minimum_balance(Self::SPACE)?;
-                if lamports == 0 {
+            pub fn init_signed(self, account: &mut Initialize<Self>, payer: &AccountView, rent: Option<&Rent>, signers: &[pinocchio::cpi::Signer]) -> Result<(), ProgramError> {
+                let view = account.to_account_view();
+
+                use pinocchio::sysvars::Sysvar;
+                let lamports = match rent {
+                    Some(rent_account) => rent_account.get()?.try_minimum_balance(Self::SPACE)?,
+                    None => pinocchio::sysvars::rent::Rent::get()?.try_minimum_balance(Self::SPACE)?,
+                };
+
+                if view.lamports() == 0 {
                     pinocchio_system::instructions::CreateAccount {
                         from: payer,
-                        to: account.to_account_view(),
-                        lamports: rent_exempt_lamports,
+                        to: view,
+                        lamports,
                         space: Self::SPACE as u64,
-                        owner: &Self::OWNER
+                        owner: &Self::OWNER,
                     }.invoke_signed(signers)?;
                 } else {
-                    // // todo: handle for assign/allocate
-                    // pinocchio_system::instructions::Transfer {
-                    //     from: payer,
-                    //     to: account.to_account_view(),
-                    //     lamports: rent_exempt_lamports,
-                    //     space: Self::SPACE as u64,
-                    //     owner: &Self::OWNER
-                    // }.invoke_signed(signers)?;
+                    let required = lamports.saturating_sub(view.lamports());
+                    if required > 0 {
+                        pinocchio_system::instructions::Transfer {
+                            from: payer,
+                            to: view,
+                            lamports: required,
+                        }.invoke_signed(signers)?;
+                    }
+                    pinocchio_system::instructions::Assign {
+                        account: view,
+                        owner: &Self::OWNER,
+                    }.invoke_signed(signers)?;
+                    unsafe { view.resize_unchecked(Self::SPACE) }?;
                 }
 
-                let mut data = account.to_account_view().try_borrow_mut()?;
+                let mut data = view.try_borrow_mut()?;
                 data[0] = Self::DISCRIMINATOR;
                 self.serialize(&mut data[1..])?;
                 Ok(())
@@ -221,4 +276,56 @@ fn strip_generics(ty: &Type) -> proc_macro2::TokenStream {
         }
         _ => panic!("Unsupported field type"),
     }
+}
+
+#[proc_macro_attribute]
+pub fn error_code(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(item as DeriveInput);
+    let name = &input.ident;
+
+    let variants = match &input.data {
+        Data::Enum(data) => &data.variants,
+        _ => panic!("#[error_code] can only be used on enums"),
+    };
+
+    // Compute discriminant values (mirrors repr(u32) auto-increment)
+    let mut next_discriminant: u32 = 0;
+    let match_arms: Vec<_> = variants.iter().map(|v| {
+        let ident = &v.ident;
+        if let Some((_, expr)) = &v.discriminant {
+            if let syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(lit_int), .. }) = expr {
+                next_discriminant = lit_int.base10_parse::<u32>()
+                    .expect("#[error_code] discriminant must be a valid u32");
+            } else {
+                panic!("#[error_code] discriminant must be an integer literal");
+            }
+        }
+        let value = next_discriminant;
+        next_discriminant += 1;
+        quote! { #value => Ok(#name::#ident) }
+    }).collect();
+
+    quote! {
+        #[repr(u32)]
+        #input
+
+        impl From<#name> for ProgramError {
+            #[inline(always)]
+            fn from(e: #name) -> Self {
+                ProgramError::Custom(e as u32)
+            }
+        }
+
+        impl TryFrom<u32> for #name {
+            type Error = ProgramError;
+
+            #[inline(always)]
+            fn try_from(error: u32) -> Result<Self, Self::Error> {
+                match error {
+                    #(#match_arms,)*
+                    _ => Err(ProgramError::InvalidArgument),
+                }
+            }
+        }
+    }.into()
 }

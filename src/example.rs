@@ -23,7 +23,7 @@ pub fn make(ctx: Ctx<Make>, receive: u64) -> Result<(), ProgramError> {
     }.init(
         ctx.accounts.escrow,
         ctx.accounts.maker.to_account_view(),
-        &ctx.accounts.rent
+        Some(ctx.accounts.rent),
     )
 }
 
