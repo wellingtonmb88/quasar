@@ -27,6 +27,11 @@ pub trait AccountCheck {
     fn check(_view: &AccountView) -> Result<(), ProgramError> { Ok(()) }
 }
 
+pub trait ParseAccounts<'info>: Sized {
+    type Bumps: Copy;
+    fn parse(accounts: &'info [AccountView]) -> Result<(Self, Self::Bumps), ProgramError>;
+}
+
 pub trait QuasarAccount: Sized + Discriminator + Space {
     fn deserialize(data: &[u8]) -> Result<Self, ProgramError>;
     fn serialize(&self, data: &mut [u8]) -> Result<(), ProgramError>;

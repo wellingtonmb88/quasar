@@ -5,6 +5,7 @@ pub mod macros;
 #[macro_use]
 pub mod sysvars;
 pub mod cpi;
+pub mod pda;
 pub mod token;
 pub mod traits;
 pub mod checks;

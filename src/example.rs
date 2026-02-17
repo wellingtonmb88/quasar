@@ -3,6 +3,7 @@ use crate::prelude::*;
 #[derive(Accounts)]
 pub struct Make<'info> {
     pub maker: &'info mut Signer,
+    #[account(seeds = [b"escrow", maker], bump)]
     pub escrow: &'info mut Initialize<EscrowAccount>,
     pub maker_ta_a: &'info mut Account<TokenAccount>,
     pub maker_ta_b: &'info Account<TokenAccount>,
@@ -14,16 +15,21 @@ pub struct Make<'info> {
 
 #[instruction(discriminator = 0)]
 pub fn make(ctx: Ctx<Make>, receive: u64) -> Result<(), ProgramError> {
+    let seeds = ctx.bumps.escrow_seeds();
+
     EscrowAccount {
-        maker: ctx.accounts.maker.to_account_view().address().clone(),
-        mint_a: ctx.accounts.maker_ta_a.mint().clone(),
-        mint_b: ctx.accounts.maker_ta_b.mint().clone(),
-        maker_ta_b: ctx.accounts.maker_ta_b.to_account_view().address().clone(),
-        receive
-    }.init(
+        maker: *ctx.accounts.maker.to_account_view().address(),
+        mint_a: *ctx.accounts.maker_ta_a.mint(),
+        mint_b: *ctx.accounts.maker_ta_b.mint(),
+        maker_ta_b: *ctx.accounts.maker_ta_b.to_account_view().address(),
+        receive,
+        bump: ctx.bumps.escrow,
+    }
+    .init_signed(
         ctx.accounts.escrow,
         ctx.accounts.maker.to_account_view(),
         Some(ctx.accounts.rent),
+        &[quasar::cpi::Signer::from(&seeds)],
     )
 }
 
@@ -34,12 +40,18 @@ pub struct EscrowAccount {
     pub mint_b: Address,
     pub maker_ta_b: Address,
     pub receive: u64,
+    pub bump: u8,
 }
 
 #[derive(Accounts)]
 pub struct Take<'info> {
     pub taker: &'info mut Signer,
-    #[account(has_one = maker, constraint = escrow.receive > 0)]
+    #[account(
+        has_one = maker,
+        constraint = escrow.receive > 0,
+        seeds = [b"escrow", maker],
+        bump = escrow.bump
+    )]
     pub escrow: &'info Account<EscrowAccount>,
     pub maker: &'info UncheckedAccount,
     pub token_program: &'info TokenProgram,
@@ -48,6 +60,6 @@ pub struct Take<'info> {
 
 #[instruction(discriminator = 1)]
 pub fn take(ctx: Ctx<Take>) -> Result<(), ProgramError> {
-    let _escrow_data = ctx.accounts.escrow.get()?;
+    let _seeds = ctx.bumps.escrow_seeds();
     Ok(())
 }
