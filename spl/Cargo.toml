@@ -14,6 +14,4 @@ unexpected_cfgs = { level = "warn", check-cfg = [
 
 [dependencies]
 quasar-core = { path = "../core" }
-solana-account-view = "1.0.0"
 solana-address = { version = "2.2.0", features = ["copy"] }
-solana-program-error = "3.0.0"
