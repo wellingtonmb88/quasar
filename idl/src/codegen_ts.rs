@@ -10,8 +10,12 @@ pub fn generate_ts_client(idl: &Idl) -> String {
     let used = collect_used_codecs(idl);
     let has_dyn_string = used.contains("dynString");
     let has_dyn_vec = used.contains("dynVec");
+    let has_instructions = !idl.instructions.is_empty();
 
     // --- Imports ---
+    if has_instructions {
+        out.push_str("import { Buffer } from \"buffer\";\n");
+    }
     out.push_str(
         "import { PublicKey as Address, TransactionInstruction } from \"@solana/web3.js\";\n",
     );
@@ -390,7 +394,7 @@ pub fn generate_ts_client(idl: &Idl) -> String {
         let disc_bytes: Vec<String> = ix.discriminator.iter().map(|b| b.to_string()).collect();
         if ix.args.is_empty() {
             out.push_str(&format!(
-                "    const data = new Uint8Array([{}]);\n",
+                "    const data = Buffer.from([{}]);\n",
                 disc_bytes.join(", ")
             ));
         } else {
@@ -405,7 +409,7 @@ pub fn generate_ts_client(idl: &Idl) -> String {
             out.push_str("    ]);\n");
             let arg_names: Vec<&str> = ix.args.iter().map(|a| a.name.as_str()).collect();
             out.push_str(&format!(
-                "    const data = new Uint8Array([{}, ...argsCodec.encode({{ {} }})]);\n",
+                "    const data = Buffer.from([{}, ...argsCodec.encode({{ {} }})]);\n",
                 disc_bytes.join(", "),
                 arg_names.join(", ")
             ));
