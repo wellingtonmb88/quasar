@@ -104,7 +104,10 @@ pub(crate) fn instruction(attr: TokenStream, item: TokenStream) -> TokenStream {
                 if let Some(max) = is_dynamic_string(&pt.ty, false) {
                     DynKind::Str { max }
                 } else if let Some((elem, max)) = is_dynamic_vec(&pt.ty, false) {
-                    DynKind::Vec { elem: Box::new(elem), max }
+                    DynKind::Vec {
+                        elem: Box::new(elem),
+                        max,
+                    }
                 } else {
                     DynKind::Fixed
                 }
