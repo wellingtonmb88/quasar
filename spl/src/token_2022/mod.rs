@@ -1,13 +1,13 @@
 use quasar_core::prelude::*;
 
-use crate::constants::TOKEN_2022_ID;
+use crate::constants::{TOKEN_2022_BYTES, TOKEN_2022_ID};
 use crate::cpi::TokenCpi;
 use crate::state::{MintAccountState, TokenAccountState};
 
 quasar_core::define_account!(pub struct Token2022Program => [checks::Executable, checks::Address]);
 
 impl Program for Token2022Program {
-    const ID: Address = TOKEN_2022_ID;
+    const ID: Address = Address::new_from_array(TOKEN_2022_BYTES);
 }
 
 /// Token account owned by the Token-2022 program.
