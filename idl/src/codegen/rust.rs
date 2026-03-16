@@ -67,23 +67,18 @@ pub fn generate_client(parsed: &ParsedProgram) -> Result<String, fmt::Error> {
             .collect();
 
         // --- Struct definition ---
-        write!(out, "pub struct {}Instruction {{\n", struct_name)?;
+        writeln!(out, "pub struct {}Instruction {{", struct_name)?;
 
         // Account fields (all Address)
         if let Some(accs) = accounts_struct {
             for field in &accs.fields {
-                write!(out, "    pub {}: Address,\n", field.name)?;
+                writeln!(out, "    pub {}: Address,", field.name)?;
             }
         }
 
         // Instruction arg fields
         for (i, (name, _)) in ix.args.iter().enumerate() {
-            write!(
-                out,
-                "    pub {}: {},\n",
-                name,
-                rust_field_type(&arg_types[i])
-            )?;
+            writeln!(out, "    pub {}: {},", name, rust_field_type(&arg_types[i]))?;
         }
 
         // Remaining accounts field
@@ -94,14 +89,14 @@ pub fn generate_client(parsed: &ParsedProgram) -> Result<String, fmt::Error> {
         out.push_str("}\n\n");
 
         // --- From impl ---
-        write!(
+        writeln!(
             out,
-            "impl From<{}Instruction> for Instruction {{\n",
+            "impl From<{}Instruction> for Instruction {{",
             struct_name
         )?;
-        write!(
+        writeln!(
             out,
-            "    fn from(ix: {}Instruction) -> Instruction {{\n",
+            "    fn from(ix: {}Instruction) -> Instruction {{",
             struct_name
         )?;
 
@@ -113,7 +108,7 @@ pub fn generate_client(parsed: &ParsedProgram) -> Result<String, fmt::Error> {
         }
         if let Some(accs) = accounts_struct {
             for field in &accs.fields {
-                write!(out, "            {},\n", account_meta_expr(field))?;
+                writeln!(out, "            {},", account_meta_expr(field))?;
             }
         }
         out.push_str("        ];\n");
@@ -125,9 +120,9 @@ pub fn generate_client(parsed: &ParsedProgram) -> Result<String, fmt::Error> {
         let disc_str = format_disc_list(&ix.discriminator)?;
 
         if ix.args.is_empty() {
-            write!(out, "        let data = vec![{}];\n", disc_str)?;
+            writeln!(out, "        let data = vec![{}];", disc_str)?;
         } else {
-            write!(out, "        let mut data = vec![{}];\n", disc_str)?;
+            writeln!(out, "        let mut data = vec![{}];", disc_str)?;
             for (i, (name, _)) in ix.args.iter().enumerate() {
                 out.push_str(&serialize_expr(name, &arg_types[i]));
             }
@@ -155,9 +150,9 @@ pub fn generate_client(parsed: &ParsedProgram) -> Result<String, fmt::Error> {
         for ev in &parsed.events {
             let const_name = pascal_to_screaming_snake(&ev.name);
             let disc_str = format_disc_list(&ev.discriminator)?;
-            write!(
+            writeln!(
                 out,
-                "pub const {}_EVENT_DISCRIMINATOR: &[u8] = &[{}];\n",
+                "pub const {}_EVENT_DISCRIMINATOR: &[u8] = &[{}];",
                 const_name, disc_str
             )?;
         }
@@ -165,11 +160,11 @@ pub fn generate_client(parsed: &ParsedProgram) -> Result<String, fmt::Error> {
 
         // Event struct definitions
         for type_def in &event_types {
-            write!(out, "pub struct {} {{\n", type_def.name)?;
+            writeln!(out, "pub struct {} {{", type_def.name)?;
             for field in &type_def.ty.fields {
-                write!(
+                writeln!(
                     out,
-                    "    pub {}: {},\n",
+                    "    pub {}: {},",
                     field.name,
                     rust_field_type(&field.ty)
                 )?;
@@ -181,9 +176,9 @@ pub fn generate_client(parsed: &ParsedProgram) -> Result<String, fmt::Error> {
         out.push_str("pub enum ProgramEvent {\n");
         for type_def in &event_types {
             if type_def.ty.fields.is_empty() {
-                write!(out, "    {},\n", type_def.name)?;
+                writeln!(out, "    {},", type_def.name)?;
             } else {
-                write!(out, "    {}({}),\n", type_def.name, type_def.name)?;
+                writeln!(out, "    {}({}),", type_def.name, type_def.name)?;
             }
         }
         out.push_str("}\n\n");
@@ -193,21 +188,17 @@ pub fn generate_client(parsed: &ParsedProgram) -> Result<String, fmt::Error> {
         for (i, ev) in parsed.events.iter().enumerate() {
             let const_name = pascal_to_screaming_snake(&ev.name);
             let type_def = &event_types[i];
-            write!(
+            writeln!(
                 out,
-                "    if data.starts_with({}_EVENT_DISCRIMINATOR) {{\n",
+                "    if data.starts_with({}_EVENT_DISCRIMINATOR) {{",
                 const_name
             )?;
             if type_def.ty.fields.is_empty() {
-                write!(
-                    out,
-                    "        return Some(ProgramEvent::{});\n",
-                    type_def.name
-                )?;
+                writeln!(out, "        return Some(ProgramEvent::{});", type_def.name)?;
             } else {
-                write!(
+                writeln!(
                     out,
-                    "        let data = &data[{}_EVENT_DISCRIMINATOR.len()..];\n",
+                    "        let data = &data[{}_EVENT_DISCRIMINATOR.len()..];",
                     const_name
                 )?;
                 out.push_str("        let mut offset = 0usize;\n");
@@ -216,9 +207,9 @@ pub fn generate_client(parsed: &ParsedProgram) -> Result<String, fmt::Error> {
                 }
                 let field_names: Vec<&str> =
                     type_def.ty.fields.iter().map(|f| f.name.as_str()).collect();
-                write!(
+                writeln!(
                     out,
-                    "        return Some(ProgramEvent::{}({} {{ {} }}));\n",
+                    "        return Some(ProgramEvent::{}({} {{ {} }}));",
                     type_def.name,
                     type_def.name,
                     field_names.join(", ")
