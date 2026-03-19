@@ -50,7 +50,7 @@ build-sbf:
 test:
 	@$(MAKE) build
 	@$(MAKE) build-sbf
-	@cargo test -p quasar-core -p quasar-derive -p quasar-spl -p quasar-pod \
+	@cargo test -p quasar-lang -p quasar-derive -p quasar-spl -p quasar-pod \
 		-p quasar-vault -p quasar-escrow -p quasar-multisig \
 		-p quasar-test-suite \
 		--all-features
@@ -64,13 +64,13 @@ bench-cu:
 
 test-miri:
 	@MIRIFLAGS="-Zmiri-tree-borrows -Zmiri-symbolic-alignment-check" \
-		cargo +$(NIGHTLY_TOOLCHAIN) miri test -p quasar-core --test miri
+		cargo +$(NIGHTLY_TOOLCHAIN) miri test -p quasar-lang --test miri
 	@MIRIFLAGS="-Zmiri-tree-borrows -Zmiri-symbolic-alignment-check" \
 		cargo +$(NIGHTLY_TOOLCHAIN) miri test -p quasar-spl --test miri
 
 test-miri-strict:
 	@MIRIFLAGS="-Zmiri-tree-borrows -Zmiri-symbolic-alignment-check -Zmiri-strict-provenance" \
-		cargo +$(NIGHTLY_TOOLCHAIN) miri test -p quasar-core --test miri -- --skip remaining
+		cargo +$(NIGHTLY_TOOLCHAIN) miri test -p quasar-lang --test miri -- --skip remaining
 	@MIRIFLAGS="-Zmiri-tree-borrows -Zmiri-symbolic-alignment-check -Zmiri-strict-provenance" \
 		cargo +$(NIGHTLY_TOOLCHAIN) miri test -p quasar-spl --test miri
 
