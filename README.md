@@ -69,4 +69,4 @@ Full documentation at **[quasar-lang.com](https://quasar-lang.com)**.
 
 ## License
 
-MIT
+Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or [MIT License](LICENSE-MIT), at your option.
