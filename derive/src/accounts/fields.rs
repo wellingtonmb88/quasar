@@ -81,6 +81,70 @@ fn find_field_by_type<'a>(
     None
 }
 
+/// Check if a field's type is `InterfaceAccount<T>` (or `&InterfaceAccount<T>`).
+fn is_interface_account_field(field: &syn::Field) -> bool {
+    let ty = match &field.ty {
+        Type::Reference(r) => &*r.elem,
+        other => other,
+    };
+    extract_generic_inner_type(ty, "InterfaceAccount").is_some()
+}
+
+/// Resolve the token program address expression for a non-init field based on
+/// its wrapper type.
+///
+/// - `Account<Token>` → compile-time `&quasar_spl::SPL_TOKEN_ID`
+/// - `Account<Token2022>` → compile-time `&quasar_spl::TOKEN_2022_ID`
+/// - `InterfaceAccount<Token>` → runtime `token_program_field.address()`
+fn resolve_token_program_addr(
+    effective_ty: &Type,
+    token_program_field: Option<&Ident>,
+) -> proc_macro2::TokenStream {
+    let underlying = match effective_ty {
+        Type::Reference(r) => &*r.elem,
+        other => other,
+    };
+    if let Some(inner) = extract_generic_inner_type(underlying, "Account") {
+        if let Some(name) = type_base_name(inner) {
+            match name.as_str() {
+                "Token" => return quote! { &quasar_spl::SPL_TOKEN_ID },
+                "Token2022" => return quote! { &quasar_spl::TOKEN_2022_ID },
+                _ => {}
+            }
+        }
+    }
+    // InterfaceAccount or other — use runtime token_program_field
+    let tp = token_program_field
+        .expect("InterfaceAccount with token/ata attrs requires a token program field");
+    quote! { #tp.to_account_view().address() }
+}
+
+/// Count how many fields match the given type names (checking Program<T> and
+/// Interface<T> wrappers). Used to detect ambiguous token program fields.
+fn count_fields_by_type(
+    fields: &syn::punctuated::Punctuated<syn::Field, syn::token::Comma>,
+    type_names: &[&str],
+) -> usize {
+    let mut count = 0;
+    for field in fields.iter() {
+        let ty = match &field.ty {
+            syn::Type::Reference(type_ref) => &*type_ref.elem,
+            other => other,
+        };
+        let matched = if let Some(inner_ty) = extract_generic_inner_type(ty, "Program") {
+            type_base_name(inner_ty).is_some_and(|b| type_names.contains(&b.as_str()))
+        } else if let Some(inner_ty) = extract_generic_inner_type(ty, "Interface") {
+            type_base_name(inner_ty).is_some_and(|b| type_names.contains(&b.as_str()))
+        } else {
+            false
+        };
+        if matched {
+            count += 1;
+        }
+    }
+    count
+}
+
 /// Find a field by name.
 fn find_field_by_name<'a>(
     fields: &'a syn::punctuated::Punctuated<syn::Field, syn::token::Comma>,
@@ -185,6 +249,7 @@ struct DetectedFields<'a> {
     // Programs
     system_program: Option<&'a Ident>,
     token_program: Option<&'a Ident>,
+    token_program_count: usize,
     associated_token_program: Option<&'a Ident>,
     metadata_program: Option<&'a Ident>,
 
@@ -212,6 +277,8 @@ impl<'a> DetectedFields<'a> {
         // --- Type-based detection (single pass) ---
         let system_program = find_field_by_type(fields, &["System"]);
         let token_program = find_field_by_type(fields, &["Token", "Token2022", "TokenInterface"]);
+        let token_program_count =
+            count_fields_by_type(fields, &["Token", "Token2022", "TokenInterface"]);
         let associated_token_program = find_field_by_type(fields, &["AssociatedTokenProgram"]);
         let metadata_program = find_field_by_type(fields, &["MetadataProgram"]);
 
@@ -248,6 +315,7 @@ impl<'a> DetectedFields<'a> {
         DetectedFields {
             system_program,
             token_program,
+            token_program_count,
             associated_token_program,
             metadata_program,
             metadata_account,
@@ -369,14 +437,6 @@ fn validate_field_attrs(
     reject!(
         attrs.space.is_some() && !is_init,
         "`space` requires `init` or `init_if_needed`"
-    );
-    reject!(
-        attrs.token_mint.is_some() && !is_init,
-        "`token::mint` requires `init` or `init_if_needed`"
-    );
-    reject!(
-        attrs.token_authority.is_some() && !is_init,
-        "`token::authority` requires `init` or `init_if_needed`"
     );
 
     // Paired attributes
@@ -505,15 +565,42 @@ pub(super) fn process_fields(
         None
     };
 
+    // Non-init InterfaceAccount fields with token/ata attrs need a runtime
+    // token_program_field. Account<Token>/Account<Token2022> resolve at compile
+    // time and do NOT require one.
+    let has_any_non_init_interface_needing_program = field_attrs
+        .iter()
+        .zip(fields.iter())
+        .any(|(a, f)| {
+            let is_init = a.is_init || a.init_if_needed;
+            let needs_program = a.token_mint.is_some()
+                || (a.associated_token_mint.is_some()
+                    && a.associated_token_token_program.is_none());
+            !is_init && needs_program && is_interface_account_field(f)
+        });
+
     let token_program_field = if has_any_token_init
         || has_any_ata_init
         || has_any_mint_init
         || has_any_master_edition_init
+        || has_any_non_init_interface_needing_program
     {
+        // Check for multiple token program fields when InterfaceAccount ATA attrs
+        // don't specify an explicit program — ambiguity must be resolved by the user.
+        if has_any_non_init_interface_needing_program && detected.token_program_count > 1 {
+            return Err(syn::Error::new(
+                proc_macro2::Span::call_site(),
+                "Multiple token program fields detected. Use \
+                 `associated_token::token_program = <field>` to specify which one.",
+            )
+            .to_compile_error()
+            .into());
+        }
         Some(DetectedFields::require(
             detected.token_program,
-            "token/ATA/mint/master_edition init requires a token program field (Program<Token>, \
-             Program<Token2022>, or Interface<TokenInterface>)",
+            "token/ATA/mint/master_edition init or InterfaceAccount validation requires a \
+             token program field (Program<Token>, Program<Token2022>, or \
+             Interface<TokenInterface>)",
         )?)
     } else {
         None
@@ -1023,7 +1110,8 @@ pub(super) fn process_fields(
                 let token_program_addr = if let Some(tp) = &attrs.associated_token_token_program {
                     quote! { #tp.address() }
                 } else {
-                    quote! { &quasar_spl::SPL_TOKEN_ID }
+                    let tp = token_program_field.unwrap();
+                    quote! { #tp.address() }
                 };
 
                 let ata_cpi = |instruction_byte: u8| {
@@ -1044,42 +1132,13 @@ pub(super) fn process_fields(
                     }
                 };
 
-                let owner_check = gen_owner_check(field_name, effective_ty, &token_program_addr);
                 let validate = quote! {
-                    {
-                        let (__expected_ata, _) = quasar_spl::get_associated_token_address_with_program(
-                            #auth_field.address(),
-                            #mint_field.address(),
-                            #token_program_addr,
-                        );
-                        if quasar_lang::utils::hint::unlikely(
-                            !quasar_lang::keys_eq(#field_name.address(), &__expected_ata)
-                        ) {
-                            return Err(ProgramError::InvalidSeeds);
-                        }
-                    }
-                    #owner_check
-                    if quasar_lang::utils::hint::unlikely(
-                        #field_name.data_len() < quasar_spl::TokenAccountState::LEN
-                    ) {
-                        return Err(ProgramError::InvalidAccountData);
-                    }
-                    let __state = unsafe {
-                        &*(#field_name.data_ptr() as *const quasar_spl::TokenAccountState)
-                    };
-                    if quasar_lang::utils::hint::unlikely(!__state.is_initialized()) {
-                        return Err(ProgramError::UninitializedAccount);
-                    }
-                    if quasar_lang::utils::hint::unlikely(
-                        !quasar_lang::keys_eq(__state.mint(), #mint_field.address())
-                    ) {
-                        return Err(ProgramError::InvalidAccountData);
-                    }
-                    if quasar_lang::utils::hint::unlikely(
-                        !quasar_lang::keys_eq(__state.owner(), #auth_field.address())
-                    ) {
-                        return Err(ProgramError::InvalidAccountData);
-                    }
+                    quasar_spl::validate_ata(
+                        #field_name.to_account_view(),
+                        #auth_field.to_account_view().address(),
+                        #mint_field.to_account_view().address(),
+                        #token_program_addr,
+                    )?;
                 };
                 // ATA: create_idempotent (1) for init_if_needed, create (0) for init
                 init_blocks.push(wrap_init_block(
@@ -1108,30 +1167,13 @@ pub(super) fn process_fields(
                     ).invoke()?;
                 };
                 let tok_addr = quote! { #tok_field.address() };
-                let owner_check = gen_owner_check(field_name, effective_ty, &tok_addr);
                 let validate = quote! {
-                    #owner_check
-                    if quasar_lang::utils::hint::unlikely(
-                        #field_name.data_len() < quasar_spl::TokenAccountState::LEN
-                    ) {
-                        return Err(ProgramError::InvalidAccountData);
-                    }
-                    let __state = unsafe {
-                        &*(#field_name.data_ptr() as *const quasar_spl::TokenAccountState)
-                    };
-                    if quasar_lang::utils::hint::unlikely(!__state.is_initialized()) {
-                        return Err(ProgramError::UninitializedAccount);
-                    }
-                    if quasar_lang::utils::hint::unlikely(
-                        !quasar_lang::keys_eq(__state.mint(), #mint_field.address())
-                    ) {
-                        return Err(ProgramError::InvalidAccountData);
-                    }
-                    if quasar_lang::utils::hint::unlikely(
-                        !quasar_lang::keys_eq(__state.owner(), #auth_field.address())
-                    ) {
-                        return Err(ProgramError::InvalidAccountData);
-                    }
+                    quasar_spl::validate_token_account(
+                        #field_name.to_account_view(),
+                        #mint_field.to_account_view().address(),
+                        #auth_field.to_account_view().address(),
+                        #tok_addr,
+                    )?;
                 };
                 init_blocks.push(wrap_init_block(
                     field_name,
@@ -1176,54 +1218,19 @@ pub(super) fn process_fields(
                     ).invoke()?;
                 };
                 let tok_addr = quote! { #tok_field.address() };
-                let owner_check = gen_owner_check(field_name, effective_ty, &tok_addr);
-                let freeze_check = if let Some(freeze_field) = &attrs.mint_freeze_authority {
-                    quote! {
-                        if quasar_lang::utils::hint::unlikely(
-                            !__state.has_freeze_authority()
-                                || !quasar_lang::keys_eq(
-                                    __state.freeze_authority_unchecked(),
-                                    #freeze_field.address(),
-                                )
-                        ) {
-                            return Err(ProgramError::InvalidAccountData);
-                        }
-                    }
+                let freeze_expr_ref = if let Some(freeze_field) = &attrs.mint_freeze_authority {
+                    quote! { Some(#freeze_field.address()) }
                 } else {
-                    quote! {
-                        if quasar_lang::utils::hint::unlikely(__state.has_freeze_authority()) {
-                            return Err(ProgramError::InvalidAccountData);
-                        }
-                    }
+                    quote! { None }
                 };
                 let validate = quote! {
-                    #owner_check
-                    if quasar_lang::utils::hint::unlikely(
-                        #field_name.data_len() < quasar_spl::MintAccountState::LEN
-                    ) {
-                        return Err(ProgramError::InvalidAccountData);
-                    }
-                    let __state = unsafe {
-                        &*(#field_name.data_ptr() as *const quasar_spl::MintAccountState)
-                    };
-                    if quasar_lang::utils::hint::unlikely(!__state.is_initialized()) {
-                        return Err(ProgramError::UninitializedAccount);
-                    }
-                    if quasar_lang::utils::hint::unlikely(
-                        !__state.has_mint_authority()
-                            || !quasar_lang::keys_eq(
-                                __state.mint_authority_unchecked(),
-                                #auth_field.address(),
-                            )
-                    ) {
-                        return Err(ProgramError::InvalidAccountData);
-                    }
-                    if quasar_lang::utils::hint::unlikely(
-                        __state.decimals() != (#decimals_expr) as u8
-                    ) {
-                        return Err(ProgramError::InvalidAccountData);
-                    }
-                    #freeze_check
+                    quasar_spl::validate_mint(
+                        #field_name.to_account_view(),
+                        #auth_field.to_account_view().address(),
+                        (#decimals_expr) as u8,
+                        #freeze_expr_ref,
+                        #tok_addr,
+                    )?;
                 };
                 init_blocks.push(wrap_init_block(
                     field_name,
@@ -1284,7 +1291,7 @@ pub(super) fn process_fields(
             let token_program_addr = if let Some(tp) = &attrs.associated_token_token_program {
                 quote! { #tp.to_account_view().address() }
             } else {
-                quote! { &quasar_spl::SPL_TOKEN_ID }
+                resolve_token_program_addr(effective_ty, token_program_field)
             };
 
             pda_checks.push(quote! {
@@ -1292,6 +1299,24 @@ pub(super) fn process_fields(
                     #field_name.to_account_view(),
                     #auth_field.to_account_view().address(),
                     #mint_field.to_account_view().address(),
+                    #token_program_addr,
+                )?;
+            });
+        }
+
+        // --- Non-init token account validation ---
+
+        if let (false, Some(mint_field), Some(auth_field)) = (
+            is_init_field,
+            attrs.token_mint.as_ref(),
+            attrs.token_authority.as_ref(),
+        ) {
+            let token_program_addr = resolve_token_program_addr(effective_ty, token_program_field);
+            pda_checks.push(quote! {
+                quasar_spl::validate_token_account(
+                    #field_name.to_account_view(),
+                    #mint_field.to_account_view().address(),
+                    #auth_field.to_account_view().address(),
                     #token_program_addr,
                 )?;
             });
