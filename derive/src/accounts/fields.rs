@@ -188,39 +188,6 @@ fn extract_account_inner_type(ty: &Type) -> Option<proc_macro2::TokenStream> {
     extract_generic_inner_type(deref_ty, "Account").map(|inner| quote!(#inner))
 }
 
-/// Generate the owner check for init_if_needed validation based on wrapper
-/// type.
-///
-/// - `Account<T>`: uses `CheckOwner` trait (single comparison against a
-///   compile-time constant — the most CU-efficient path).
-/// - `InterfaceAccount<T>`: exact match against `token_program.address()`. This
-///   subsumes the broader "is it SPL Token or Token-2022" check.
-fn gen_owner_check(
-    field_name: &Ident,
-    effective_ty: &Type,
-    tok_program_addr: &proc_macro2::TokenStream,
-) -> proc_macro2::TokenStream {
-    let underlying_ty = match effective_ty {
-        Type::Reference(r) => &*r.elem,
-        other => other,
-    };
-    if let Some(inner_ty) = extract_generic_inner_type(underlying_ty, "Account") {
-        let inner_base = strip_generics(inner_ty);
-        quote! {
-            <#inner_base as quasar_lang::traits::CheckOwner>::check_owner(#field_name)?;
-        }
-    } else {
-        // InterfaceAccount — exact token_program match
-        quote! {
-            if quasar_lang::utils::hint::unlikely(
-                !quasar_lang::keys_eq(#field_name.owner(), #tok_program_addr)
-            ) {
-                return Err(ProgramError::IllegalOwner);
-            }
-        }
-    }
-}
-
 /// Check if the inner type T of Account<T> has a lifetime parameter,
 /// indicating a dynamic account type (e.g., Account<Profile<'info>>).
 fn is_dynamic_account_type(ty: &Type) -> bool {
