@@ -1,6 +1,6 @@
 use {
     crate::helpers::*,
-    quasar_svm::{Account, Instruction, Pubkey},
+    quasar_svm::{Instruction, Pubkey},
     quasar_test_token_cpi::client::*,
 };
 
@@ -26,12 +26,12 @@ fn approve_spl() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (source_key, token_account(mint_key, authority, 1000, token_program)),
-            (delegate_key, signer_account()),
+            signer_account(authority),
+            token_account(source_key, mint_key, authority, 1000, token_program),
+            signer_account(delegate_key),
         ],
     );
     assert!(result.is_ok(), "approve SPL should succeed: {:?}", result.raw_result);
@@ -59,12 +59,12 @@ fn approve_t22() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (source_key, token_account(mint_key, authority, 1000, token_program)),
-            (delegate_key, signer_account()),
+            signer_account(authority),
+            token_account(source_key, mint_key, authority, 1000, token_program),
+            signer_account(delegate_key),
         ],
     );
     assert!(result.is_ok(), "approve T22 should succeed: {:?}", result.raw_result);
@@ -92,12 +92,12 @@ fn approve_interface_spl() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (source_key, token_account(mint_key, authority, 1000, token_program)),
-            (delegate_key, signer_account()),
+            signer_account(authority),
+            token_account(source_key, mint_key, authority, 1000, token_program),
+            signer_account(delegate_key),
         ],
     );
     assert!(
@@ -125,12 +125,12 @@ fn approve_interface_t22() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (source_key, token_account(mint_key, authority, 1000, token_program)),
-            (delegate_key, signer_account()),
+            signer_account(authority),
+            token_account(source_key, mint_key, authority, 1000, token_program),
+            signer_account(delegate_key),
         ],
     );
     assert!(
@@ -160,17 +160,11 @@ fn revoke_spl() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (source_key, Account {
-                lamports: 1_000_000,
-                data: pack_token_account_with_delegate(mint_key, authority, 1000, delegate_key, 500),
-                owner: token_program,
-                executable: false,
-                rent_epoch: 0,
-            }),
+            signer_account(authority),
+            token_account_with_delegate(source_key, mint_key, authority, 1000, delegate_key, 500, token_program),
         ],
     );
     assert!(result.is_ok(), "revoke SPL should succeed: {:?}", result.raw_result);
@@ -196,17 +190,11 @@ fn revoke_t22() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (source_key, Account {
-                lamports: 1_000_000,
-                data: pack_token_account_with_delegate(mint_key, authority, 1000, delegate_key, 500),
-                owner: token_program,
-                executable: false,
-                rent_epoch: 0,
-            }),
+            signer_account(authority),
+            token_account_with_delegate(source_key, mint_key, authority, 1000, delegate_key, 500, token_program),
         ],
     );
     assert!(result.is_ok(), "revoke T22 should succeed: {:?}", result.raw_result);
@@ -232,17 +220,11 @@ fn revoke_interface_spl() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (source_key, Account {
-                lamports: 1_000_000,
-                data: pack_token_account_with_delegate(mint_key, authority, 1000, delegate_key, 500),
-                owner: token_program,
-                executable: false,
-                rent_epoch: 0,
-            }),
+            signer_account(authority),
+            token_account_with_delegate(source_key, mint_key, authority, 1000, delegate_key, 500, token_program),
         ],
     );
     assert!(
@@ -268,17 +250,11 @@ fn revoke_interface_t22() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (source_key, Account {
-                lamports: 1_000_000,
-                data: pack_token_account_with_delegate(mint_key, authority, 1000, delegate_key, 500),
-                owner: token_program,
-                executable: false,
-                rent_epoch: 0,
-            }),
+            signer_account(authority),
+            token_account_with_delegate(source_key, mint_key, authority, 1000, delegate_key, 500, token_program),
         ],
     );
     assert!(

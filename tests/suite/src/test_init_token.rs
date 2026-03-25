@@ -1,6 +1,6 @@
 use {
     crate::helpers::*,
-    quasar_svm::{Account, Instruction, Pubkey},
+    quasar_svm::{Instruction, Pubkey},
     quasar_test_token_init::client::*,
 };
 
@@ -27,12 +27,12 @@ fn init_token_spl_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (token_key, Account::new(0, 0, &system_program)),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            empty_account(token_key),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -61,12 +61,12 @@ fn init_token_spl_already_initialized() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (token_key, token_account(mint_key, payer, 0, token_program)),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            token_account(token_key, mint_key, payer, 0, token_program),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -98,12 +98,12 @@ fn init_token_t22_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (token_key, Account::new(0, 0, &system_program)),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            empty_account(token_key),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -132,12 +132,12 @@ fn init_token_t22_already_initialized() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (token_key, token_account(mint_key, payer, 0, token_program)),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            token_account(token_key, mint_key, payer, 0, token_program),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -169,12 +169,12 @@ fn init_if_needed_token_spl_happy_new() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (token_key, Account::new(0, 0, &system_program)),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            empty_account(token_key),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -207,12 +207,12 @@ fn init_if_needed_token_spl_existing_valid() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (token_key, token_account(mint_key, payer, 100, token_program)),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            token_account(token_key, mint_key, payer, 100, token_program),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -246,12 +246,12 @@ fn init_if_needed_token_spl_existing_wrong_mint() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (token_key, token_account(wrong_mint, payer, 100, token_program)),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            token_account(token_key, wrong_mint, payer, 100, token_program),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -280,12 +280,12 @@ fn init_if_needed_token_spl_existing_wrong_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (token_key, token_account(mint_key, wrong_authority, 100, token_program)),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            token_account(token_key, mint_key, wrong_authority, 100, token_program),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -313,15 +313,12 @@ fn init_if_needed_token_spl_existing_wrong_owner() {
     }
     .into();
 
-    let mut bad_account = token_account(mint_key, payer, 100, token_program);
-    bad_account.owner = Pubkey::default();
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (token_key, bad_account),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            raw_account(token_key, 1_000_000, pack_token_data(mint_key, payer, 100), Pubkey::default()),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -353,12 +350,12 @@ fn init_if_needed_token_t22_happy_new() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (token_key, Account::new(0, 0, &system_program)),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            empty_account(token_key),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -391,12 +388,12 @@ fn init_if_needed_token_t22_existing_valid() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (token_key, token_account(mint_key, payer, 100, token_program)),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            token_account(token_key, mint_key, payer, 100, token_program),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -430,12 +427,12 @@ fn init_if_needed_token_t22_existing_wrong_mint() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (token_key, token_account(wrong_mint, payer, 100, token_program)),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            token_account(token_key, wrong_mint, payer, 100, token_program),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -464,12 +461,12 @@ fn init_if_needed_token_t22_existing_wrong_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (token_key, token_account(mint_key, wrong_authority, 100, token_program)),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            token_account(token_key, mint_key, wrong_authority, 100, token_program),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -497,15 +494,12 @@ fn init_if_needed_token_t22_existing_wrong_owner() {
     }
     .into();
 
-    let mut bad_account = token_account(mint_key, payer, 100, token_program);
-    bad_account.owner = Pubkey::default();
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (token_key, bad_account),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            raw_account(token_key, 1_000_000, pack_token_data(mint_key, payer, 100), Pubkey::default()),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(

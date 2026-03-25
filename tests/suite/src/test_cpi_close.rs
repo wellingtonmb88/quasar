@@ -20,14 +20,11 @@ fn close_spl() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (
-                account_key,
-                token_account(mint_key, authority, 0, token_program),
-            ),
+            signer_account(authority),
+            token_account(account_key, mint_key, authority, 0, token_program),
         ],
     );
     assert!(
@@ -53,14 +50,11 @@ fn close_t22() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (
-                account_key,
-                token_account(mint_key, authority, 0, token_program),
-            ),
+            signer_account(authority),
+            token_account(account_key, mint_key, authority, 0, token_program),
         ],
     );
     assert!(
@@ -86,14 +80,11 @@ fn close_interface_spl() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (
-                account_key,
-                token_account(mint_key, authority, 0, token_program),
-            ),
+            signer_account(authority),
+            token_account(account_key, mint_key, authority, 0, token_program),
         ],
     );
     assert!(
@@ -119,14 +110,11 @@ fn close_interface_t22() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (
-                account_key,
-                token_account(mint_key, authority, 0, token_program),
-            ),
+            signer_account(authority),
+            token_account(account_key, mint_key, authority, 0, token_program),
         ],
     );
     assert!(

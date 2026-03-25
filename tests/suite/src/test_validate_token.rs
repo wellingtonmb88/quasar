@@ -1,6 +1,6 @@
 use {
     crate::helpers::*,
-    quasar_svm::{Account, Pubkey, Instruction},
+    quasar_svm::{Pubkey, Instruction},
     quasar_test_token_validate::client::*,
 };
 
@@ -24,12 +24,12 @@ fn account_token_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, token_account(mint_key, authority, 100, token_program)),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            token_account(token_key, mint_key, authority, 100, token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_ok(), "should succeed: {:?}", result.raw_result);
@@ -52,12 +52,12 @@ fn account_token_wrong_mint() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, token_account(wrong_mint, authority, 100, token_program)),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            token_account(token_key, wrong_mint, authority, 100, token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: mint mismatch");
@@ -80,12 +80,12 @@ fn account_token_wrong_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, token_account(mint_key, wrong_authority, 100, token_program)),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            token_account(token_key, mint_key, wrong_authority, 100, token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: authority mismatch");
@@ -108,15 +108,12 @@ fn account_token_wrong_owner() {
     .into();
 
     // Valid token data but Account.owner set to wrong program
-    let mut bad_account = token_account(mint_key, authority, 100, token_program);
-    bad_account.owner = Pubkey::default();
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, bad_account),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            raw_account(token_key, 1_000_000, pack_token_data(mint_key, authority, 100), Pubkey::default()),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: account owner is wrong program");
@@ -138,20 +135,12 @@ fn account_token_uninitialized() {
     }
     .into();
 
-    let uninit_account = Account {
-        lamports: 1_000_000,
-        data: vec![0u8; 165],
-        owner: token_program,
-        executable: false,
-        rent_epoch: 0,
-    };
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, uninit_account),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            raw_account(token_key, 1_000_000, vec![0u8; 165], token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: uninitialized token account");
@@ -173,20 +162,12 @@ fn account_token_data_too_small() {
     }
     .into();
 
-    let small_account = Account {
-        lamports: 1_000_000,
-        data: vec![0u8; 10],
-        owner: token_program,
-        executable: false,
-        rent_epoch: 0,
-    };
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, small_account),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            raw_account(token_key, 1_000_000, vec![0u8; 10], token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: data too small");
@@ -212,12 +193,12 @@ fn account_token2022_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, token_account(mint_key, authority, 100, token_program)),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            token_account(token_key, mint_key, authority, 100, token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_ok(), "should succeed: {:?}", result.raw_result);
@@ -240,12 +221,12 @@ fn account_token2022_wrong_mint() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, token_account(wrong_mint, authority, 100, token_program)),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            token_account(token_key, wrong_mint, authority, 100, token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: mint mismatch");
@@ -268,12 +249,12 @@ fn account_token2022_wrong_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, token_account(mint_key, wrong_authority, 100, token_program)),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            token_account(token_key, mint_key, wrong_authority, 100, token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: authority mismatch");
@@ -295,15 +276,12 @@ fn account_token2022_wrong_owner() {
     }
     .into();
 
-    let mut bad_account = token_account(mint_key, authority, 100, token_program);
-    bad_account.owner = Pubkey::default();
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, bad_account),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            raw_account(token_key, 1_000_000, pack_token_data(mint_key, authority, 100), Pubkey::default()),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: account owner is wrong program");
@@ -325,20 +303,12 @@ fn account_token2022_uninitialized() {
     }
     .into();
 
-    let uninit_account = Account {
-        lamports: 1_000_000,
-        data: vec![0u8; 165],
-        owner: token_program,
-        executable: false,
-        rent_epoch: 0,
-    };
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, uninit_account),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            raw_account(token_key, 1_000_000, vec![0u8; 165], token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: uninitialized token account");
@@ -360,20 +330,12 @@ fn account_token2022_data_too_small() {
     }
     .into();
 
-    let small_account = Account {
-        lamports: 1_000_000,
-        data: vec![0u8; 10],
-        owner: token_program,
-        executable: false,
-        rent_epoch: 0,
-    };
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, small_account),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            raw_account(token_key, 1_000_000, vec![0u8; 10], token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: data too small");
@@ -399,12 +361,12 @@ fn interface_token_spl_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, token_account(mint_key, authority, 100, token_program)),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            token_account(token_key, mint_key, authority, 100, token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_ok(), "should succeed: {:?}", result.raw_result);
@@ -427,12 +389,12 @@ fn interface_token_spl_wrong_mint() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, token_account(wrong_mint, authority, 100, token_program)),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            token_account(token_key, wrong_mint, authority, 100, token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: mint mismatch");
@@ -455,12 +417,12 @@ fn interface_token_spl_wrong_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, token_account(mint_key, wrong_authority, 100, token_program)),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            token_account(token_key, mint_key, wrong_authority, 100, token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: authority mismatch");
@@ -482,15 +444,12 @@ fn interface_token_spl_wrong_owner() {
     }
     .into();
 
-    let mut bad_account = token_account(mint_key, authority, 100, token_program);
-    bad_account.owner = Pubkey::default();
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, bad_account),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            raw_account(token_key, 1_000_000, pack_token_data(mint_key, authority, 100), Pubkey::default()),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: account owner is wrong program");
@@ -512,20 +471,12 @@ fn interface_token_spl_uninitialized() {
     }
     .into();
 
-    let uninit_account = Account {
-        lamports: 1_000_000,
-        data: vec![0u8; 165],
-        owner: token_program,
-        executable: false,
-        rent_epoch: 0,
-    };
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, uninit_account),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            raw_account(token_key, 1_000_000, vec![0u8; 165], token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: uninitialized token account");
@@ -547,20 +498,12 @@ fn interface_token_spl_data_too_small() {
     }
     .into();
 
-    let small_account = Account {
-        lamports: 1_000_000,
-        data: vec![0u8; 10],
-        owner: token_program,
-        executable: false,
-        rent_epoch: 0,
-    };
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, small_account),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            raw_account(token_key, 1_000_000, vec![0u8; 10], token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: data too small");
@@ -586,12 +529,12 @@ fn interface_token_t22_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, token_account(mint_key, authority, 100, token_program)),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            token_account(token_key, mint_key, authority, 100, token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_ok(), "should succeed: {:?}", result.raw_result);
@@ -614,12 +557,12 @@ fn interface_token_t22_wrong_mint() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, token_account(wrong_mint, authority, 100, token_program)),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            token_account(token_key, wrong_mint, authority, 100, token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: mint mismatch");
@@ -642,12 +585,12 @@ fn interface_token_t22_wrong_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, token_account(mint_key, wrong_authority, 100, token_program)),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            token_account(token_key, mint_key, wrong_authority, 100, token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: authority mismatch");
@@ -669,15 +612,12 @@ fn interface_token_t22_wrong_owner() {
     }
     .into();
 
-    let mut bad_account = token_account(mint_key, authority, 100, token_program);
-    bad_account.owner = Pubkey::default();
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, bad_account),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            raw_account(token_key, 1_000_000, pack_token_data(mint_key, authority, 100), Pubkey::default()),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: account owner is wrong program");
@@ -699,20 +639,12 @@ fn interface_token_t22_uninitialized() {
     }
     .into();
 
-    let uninit_account = Account {
-        lamports: 1_000_000,
-        data: vec![0u8; 165],
-        owner: token_program,
-        executable: false,
-        rent_epoch: 0,
-    };
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, uninit_account),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            raw_account(token_key, 1_000_000, vec![0u8; 165], token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: uninitialized token account");
@@ -734,20 +666,12 @@ fn interface_token_t22_data_too_small() {
     }
     .into();
 
-    let small_account = Account {
-        lamports: 1_000_000,
-        data: vec![0u8; 10],
-        owner: token_program,
-        executable: false,
-        rent_epoch: 0,
-    };
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, small_account),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            raw_account(token_key, 1_000_000, vec![0u8; 10], token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: data too small");
@@ -775,12 +699,12 @@ fn interface_token_cross_program_mismatch() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, token_account(mint_key, authority, 100, actual_owner)),
-            (mint_key, mint_account(authority, 6, actual_owner)),
-            (authority, signer_account()),
+            token_account(token_key, mint_key, authority, 100, actual_owner),
+            mint_account(mint_key, authority, 6, actual_owner),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: cross-program mismatch");
@@ -805,12 +729,12 @@ fn no_program_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, token_account(mint_key, authority, 100, token_program)),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            token_account(token_key, mint_key, authority, 100, token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_ok(), "should succeed: {:?}", result.raw_result);
@@ -832,12 +756,12 @@ fn no_program_wrong_mint() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, token_account(wrong_mint, authority, 100, token_program)),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            token_account(token_key, wrong_mint, authority, 100, token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: mint mismatch");
@@ -859,12 +783,12 @@ fn no_program_wrong_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (token_key, token_account(mint_key, wrong_authority, 100, token_program)),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            token_account(token_key, mint_key, wrong_authority, 100, token_program),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: authority mismatch");

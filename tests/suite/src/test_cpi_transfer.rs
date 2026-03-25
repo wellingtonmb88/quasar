@@ -1,6 +1,6 @@
 use {
     crate::helpers::*,
-    quasar_svm::{Account, Instruction, Pubkey},
+    quasar_svm::{Instruction, Pubkey},
     quasar_test_token_cpi::client::*,
 };
 
@@ -28,13 +28,13 @@ fn transfer_checked_spl() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (from_key, token_account(mint_key, authority, 500, token_program)),
-            (mint_key, mint_account(authority, 9, token_program)),
-            (to_key, token_account(mint_key, authority, 0, token_program)),
+            signer_account(authority),
+            token_account(from_key, mint_key, authority, 500, token_program),
+            mint_account(mint_key, authority, 9, token_program),
+            token_account(to_key, mint_key, authority, 0, token_program),
         ],
     );
     assert!(result.is_ok(), "transfer_checked SPL should succeed: {:?}", result.raw_result);
@@ -64,13 +64,13 @@ fn transfer_checked_t22() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (from_key, token_account(mint_key, authority, 500, token_program)),
-            (mint_key, mint_account(authority, 9, token_program)),
-            (to_key, token_account(mint_key, authority, 0, token_program)),
+            signer_account(authority),
+            token_account(from_key, mint_key, authority, 500, token_program),
+            mint_account(mint_key, authority, 9, token_program),
+            token_account(to_key, mint_key, authority, 0, token_program),
         ],
     );
     assert!(result.is_ok(), "transfer_checked T22 should succeed: {:?}", result.raw_result);
@@ -100,13 +100,13 @@ fn transfer_checked_interface_spl() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (from_key, token_account(mint_key, authority, 500, token_program)),
-            (mint_key, mint_account(authority, 9, token_program)),
-            (to_key, token_account(mint_key, authority, 0, token_program)),
+            signer_account(authority),
+            token_account(from_key, mint_key, authority, 500, token_program),
+            mint_account(mint_key, authority, 9, token_program),
+            token_account(to_key, mint_key, authority, 0, token_program),
         ],
     );
     assert!(
@@ -136,13 +136,13 @@ fn transfer_checked_interface_t22() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (from_key, token_account(mint_key, authority, 500, token_program)),
-            (mint_key, mint_account(authority, 9, token_program)),
-            (to_key, token_account(mint_key, authority, 0, token_program)),
+            signer_account(authority),
+            token_account(from_key, mint_key, authority, 500, token_program),
+            mint_account(mint_key, authority, 9, token_program),
+            token_account(to_key, mint_key, authority, 0, token_program),
         ],
     );
     assert!(
@@ -174,12 +174,12 @@ fn interface_transfer_spl() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (from_key, token_account(mint_key, authority, 500, token_program)),
-            (to_key, token_account(mint_key, authority, 0, token_program)),
+            signer_account(authority),
+            token_account(from_key, mint_key, authority, 500, token_program),
+            token_account(to_key, mint_key, authority, 0, token_program),
         ],
     );
     assert!(result.is_ok(), "interface_transfer SPL should succeed: {:?}", result.raw_result);
@@ -203,12 +203,12 @@ fn interface_transfer_t22() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (from_key, token_account(mint_key, authority, 500, token_program)),
-            (to_key, token_account(mint_key, authority, 0, token_program)),
+            signer_account(authority),
+            token_account(from_key, mint_key, authority, 500, token_program),
+            token_account(to_key, mint_key, authority, 0, token_program),
         ],
     );
     assert!(result.is_ok(), "interface_transfer T22 should succeed: {:?}", result.raw_result);

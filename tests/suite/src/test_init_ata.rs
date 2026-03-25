@@ -1,7 +1,7 @@
 use {
     crate::helpers::*,
     quasar_spl::get_associated_token_address_with_program_const,
-    quasar_svm::{Account, Instruction, Pubkey},
+    quasar_svm::{Instruction, Pubkey},
     quasar_test_token_init::client::*,
 };
 
@@ -17,7 +17,6 @@ fn init_ata_spl_happy() {
     let mint_key = Pubkey::new_unique();
     let mint_authority = Pubkey::new_unique();
     let token_program = spl_token_program_id();
-    let system_program = quasar_svm::system_program::ID;
     let ata_program = ata_program_id();
     let (ata_key, _) =
         get_associated_token_address_with_program_const(&wallet, &mint_key, &token_program);
@@ -28,18 +27,18 @@ fn init_ata_spl_happy() {
         wallet,
         mint: mint_key,
         token_program,
-        system_program,
+        system_program: quasar_svm::system_program::ID,
         ata_program,
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (ata_key, Account::new(0, 0, &system_program)),
-            (wallet, signer_account()),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            empty_account(ata_key),
+            signer_account(wallet),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -57,7 +56,6 @@ fn init_ata_spl_already_initialized() {
     let mint_key = Pubkey::new_unique();
     let mint_authority = Pubkey::new_unique();
     let token_program = spl_token_program_id();
-    let system_program = quasar_svm::system_program::ID;
     let ata_program = ata_program_id();
     let (ata_key, _) =
         get_associated_token_address_with_program_const(&wallet, &mint_key, &token_program);
@@ -68,18 +66,18 @@ fn init_ata_spl_already_initialized() {
         wallet,
         mint: mint_key,
         token_program,
-        system_program,
+        system_program: quasar_svm::system_program::ID,
         ata_program,
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (ata_key, token_account(mint_key, wallet, 0, token_program)),
-            (wallet, signer_account()),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            token_account(ata_key, mint_key, wallet, 0, token_program),
+            signer_account(wallet),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -100,7 +98,6 @@ fn init_ata_t22_happy() {
     let mint_key = Pubkey::new_unique();
     let mint_authority = Pubkey::new_unique();
     let token_program = token_2022_program_id();
-    let system_program = quasar_svm::system_program::ID;
     let ata_program = ata_program_id();
     let (ata_key, _) =
         get_associated_token_address_with_program_const(&wallet, &mint_key, &token_program);
@@ -111,18 +108,18 @@ fn init_ata_t22_happy() {
         wallet,
         mint: mint_key,
         token_program,
-        system_program,
+        system_program: quasar_svm::system_program::ID,
         ata_program,
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (ata_key, Account::new(0, 0, &system_program)),
-            (wallet, signer_account()),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            empty_account(ata_key),
+            signer_account(wallet),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -140,7 +137,6 @@ fn init_ata_t22_already_initialized() {
     let mint_key = Pubkey::new_unique();
     let mint_authority = Pubkey::new_unique();
     let token_program = token_2022_program_id();
-    let system_program = quasar_svm::system_program::ID;
     let ata_program = ata_program_id();
     let (ata_key, _) =
         get_associated_token_address_with_program_const(&wallet, &mint_key, &token_program);
@@ -151,18 +147,18 @@ fn init_ata_t22_already_initialized() {
         wallet,
         mint: mint_key,
         token_program,
-        system_program,
+        system_program: quasar_svm::system_program::ID,
         ata_program,
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (ata_key, token_account(mint_key, wallet, 0, token_program)),
-            (wallet, signer_account()),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            token_account(ata_key, mint_key, wallet, 0, token_program),
+            signer_account(wallet),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -183,7 +179,6 @@ fn init_if_needed_ata_spl_happy_new() {
     let mint_key = Pubkey::new_unique();
     let mint_authority = Pubkey::new_unique();
     let token_program = spl_token_program_id();
-    let system_program = quasar_svm::system_program::ID;
     let ata_program = ata_program_id();
     let (ata_key, _) =
         get_associated_token_address_with_program_const(&wallet, &mint_key, &token_program);
@@ -194,18 +189,18 @@ fn init_if_needed_ata_spl_happy_new() {
         wallet,
         mint: mint_key,
         token_program,
-        system_program,
+        system_program: quasar_svm::system_program::ID,
         ata_program,
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (ata_key, Account::new(0, 0, &system_program)),
-            (wallet, signer_account()),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            empty_account(ata_key),
+            signer_account(wallet),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -227,7 +222,6 @@ fn init_if_needed_ata_spl_existing_valid() {
     let mint_key = Pubkey::new_unique();
     let mint_authority = Pubkey::new_unique();
     let token_program = spl_token_program_id();
-    let system_program = quasar_svm::system_program::ID;
     let ata_program = ata_program_id();
     let (ata_key, _) =
         get_associated_token_address_with_program_const(&wallet, &mint_key, &token_program);
@@ -238,18 +232,18 @@ fn init_if_needed_ata_spl_existing_valid() {
         wallet,
         mint: mint_key,
         token_program,
-        system_program,
+        system_program: quasar_svm::system_program::ID,
         ata_program,
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (ata_key, token_account(mint_key, wallet, 100, token_program)),
-            (wallet, signer_account()),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            token_account(ata_key, mint_key, wallet, 100, token_program),
+            signer_account(wallet),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -272,7 +266,6 @@ fn init_if_needed_ata_spl_existing_wrong_mint() {
     let wrong_mint = Pubkey::new_unique();
     let mint_authority = Pubkey::new_unique();
     let token_program = spl_token_program_id();
-    let system_program = quasar_svm::system_program::ID;
     let ata_program = ata_program_id();
     let (ata_key, _) =
         get_associated_token_address_with_program_const(&wallet, &mint_key, &token_program);
@@ -283,18 +276,18 @@ fn init_if_needed_ata_spl_existing_wrong_mint() {
         wallet,
         mint: mint_key,
         token_program,
-        system_program,
+        system_program: quasar_svm::system_program::ID,
         ata_program,
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (ata_key, token_account(wrong_mint, wallet, 100, token_program)),
-            (wallet, signer_account()),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            token_account(ata_key, wrong_mint, wallet, 100, token_program),
+            signer_account(wallet),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -312,7 +305,6 @@ fn init_if_needed_ata_spl_existing_wrong_authority() {
     let wrong_wallet = Pubkey::new_unique();
     let mint_authority = Pubkey::new_unique();
     let token_program = spl_token_program_id();
-    let system_program = quasar_svm::system_program::ID;
     let ata_program = ata_program_id();
     let (ata_key, _) =
         get_associated_token_address_with_program_const(&wallet, &mint_key, &token_program);
@@ -323,18 +315,18 @@ fn init_if_needed_ata_spl_existing_wrong_authority() {
         wallet,
         mint: mint_key,
         token_program,
-        system_program,
+        system_program: quasar_svm::system_program::ID,
         ata_program,
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (ata_key, token_account(mint_key, wrong_wallet, 100, token_program)),
-            (wallet, signer_account()),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            token_account(ata_key, mint_key, wrong_wallet, 100, token_program),
+            signer_account(wallet),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -351,7 +343,6 @@ fn init_if_needed_ata_spl_existing_wrong_owner() {
     let mint_key = Pubkey::new_unique();
     let mint_authority = Pubkey::new_unique();
     let token_program = spl_token_program_id();
-    let system_program = quasar_svm::system_program::ID;
     let ata_program = ata_program_id();
     let (ata_key, _) =
         get_associated_token_address_with_program_const(&wallet, &mint_key, &token_program);
@@ -362,21 +353,18 @@ fn init_if_needed_ata_spl_existing_wrong_owner() {
         wallet,
         mint: mint_key,
         token_program,
-        system_program,
+        system_program: quasar_svm::system_program::ID,
         ata_program,
     }
     .into();
 
-    let mut bad_account = token_account(mint_key, wallet, 100, token_program);
-    bad_account.owner = Pubkey::default();
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (ata_key, bad_account),
-            (wallet, signer_account()),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            raw_account(ata_key, 1_000_000, pack_token_data(mint_key, wallet, 100), Pubkey::default()),
+            signer_account(wallet),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -397,7 +385,6 @@ fn init_if_needed_ata_t22_happy_new() {
     let mint_key = Pubkey::new_unique();
     let mint_authority = Pubkey::new_unique();
     let token_program = token_2022_program_id();
-    let system_program = quasar_svm::system_program::ID;
     let ata_program = ata_program_id();
     let (ata_key, _) =
         get_associated_token_address_with_program_const(&wallet, &mint_key, &token_program);
@@ -408,18 +395,18 @@ fn init_if_needed_ata_t22_happy_new() {
         wallet,
         mint: mint_key,
         token_program,
-        system_program,
+        system_program: quasar_svm::system_program::ID,
         ata_program,
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (ata_key, Account::new(0, 0, &system_program)),
-            (wallet, signer_account()),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            empty_account(ata_key),
+            signer_account(wallet),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -441,7 +428,6 @@ fn init_if_needed_ata_t22_existing_valid() {
     let mint_key = Pubkey::new_unique();
     let mint_authority = Pubkey::new_unique();
     let token_program = token_2022_program_id();
-    let system_program = quasar_svm::system_program::ID;
     let ata_program = ata_program_id();
     let (ata_key, _) =
         get_associated_token_address_with_program_const(&wallet, &mint_key, &token_program);
@@ -452,18 +438,18 @@ fn init_if_needed_ata_t22_existing_valid() {
         wallet,
         mint: mint_key,
         token_program,
-        system_program,
+        system_program: quasar_svm::system_program::ID,
         ata_program,
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (ata_key, token_account(mint_key, wallet, 100, token_program)),
-            (wallet, signer_account()),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            token_account(ata_key, mint_key, wallet, 100, token_program),
+            signer_account(wallet),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -486,7 +472,6 @@ fn init_if_needed_ata_t22_existing_wrong_mint() {
     let wrong_mint = Pubkey::new_unique();
     let mint_authority = Pubkey::new_unique();
     let token_program = token_2022_program_id();
-    let system_program = quasar_svm::system_program::ID;
     let ata_program = ata_program_id();
     let (ata_key, _) =
         get_associated_token_address_with_program_const(&wallet, &mint_key, &token_program);
@@ -497,18 +482,18 @@ fn init_if_needed_ata_t22_existing_wrong_mint() {
         wallet,
         mint: mint_key,
         token_program,
-        system_program,
+        system_program: quasar_svm::system_program::ID,
         ata_program,
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (ata_key, token_account(wrong_mint, wallet, 100, token_program)),
-            (wallet, signer_account()),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            token_account(ata_key, wrong_mint, wallet, 100, token_program),
+            signer_account(wallet),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -526,7 +511,6 @@ fn init_if_needed_ata_t22_existing_wrong_authority() {
     let wrong_wallet = Pubkey::new_unique();
     let mint_authority = Pubkey::new_unique();
     let token_program = token_2022_program_id();
-    let system_program = quasar_svm::system_program::ID;
     let ata_program = ata_program_id();
     let (ata_key, _) =
         get_associated_token_address_with_program_const(&wallet, &mint_key, &token_program);
@@ -537,18 +521,18 @@ fn init_if_needed_ata_t22_existing_wrong_authority() {
         wallet,
         mint: mint_key,
         token_program,
-        system_program,
+        system_program: quasar_svm::system_program::ID,
         ata_program,
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (ata_key, token_account(mint_key, wrong_wallet, 100, token_program)),
-            (wallet, signer_account()),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            token_account(ata_key, mint_key, wrong_wallet, 100, token_program),
+            signer_account(wallet),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(
@@ -565,7 +549,6 @@ fn init_if_needed_ata_t22_existing_wrong_owner() {
     let mint_key = Pubkey::new_unique();
     let mint_authority = Pubkey::new_unique();
     let token_program = token_2022_program_id();
-    let system_program = quasar_svm::system_program::ID;
     let ata_program = ata_program_id();
     let (ata_key, _) =
         get_associated_token_address_with_program_const(&wallet, &mint_key, &token_program);
@@ -576,21 +559,18 @@ fn init_if_needed_ata_t22_existing_wrong_owner() {
         wallet,
         mint: mint_key,
         token_program,
-        system_program,
+        system_program: quasar_svm::system_program::ID,
         ata_program,
     }
     .into();
 
-    let mut bad_account = token_account(mint_key, wallet, 100, token_program);
-    bad_account.owner = Pubkey::default();
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (ata_key, bad_account),
-            (wallet, signer_account()),
-            (mint_key, mint_account(mint_authority, 6, token_program)),
+            rich_signer_account(payer),
+            raw_account(ata_key, 1_000_000, pack_token_data(mint_key, wallet, 100), Pubkey::default()),
+            signer_account(wallet),
+            mint_account(mint_key, mint_authority, 6, token_program),
         ],
     );
     assert!(

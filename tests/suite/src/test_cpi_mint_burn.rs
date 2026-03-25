@@ -25,12 +25,12 @@ fn mint_to_spl() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (mint_key, mint_account(authority, 9, token_program)),
-            (to_key, token_account(mint_key, authority, 0, token_program)),
+            signer_account(authority),
+            mint_account(mint_key, authority, 9, token_program),
+            token_account(to_key, mint_key, authority, 0, token_program),
         ],
     );
     assert!(result.is_ok(), "mint_to SPL should succeed: {:?}", result.raw_result);
@@ -57,12 +57,12 @@ fn mint_to_t22() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (mint_key, mint_account(authority, 9, token_program)),
-            (to_key, token_account(mint_key, authority, 0, token_program)),
+            signer_account(authority),
+            mint_account(mint_key, authority, 9, token_program),
+            token_account(to_key, mint_key, authority, 0, token_program),
         ],
     );
     assert!(result.is_ok(), "mint_to T22 should succeed: {:?}", result.raw_result);
@@ -89,12 +89,12 @@ fn mint_to_interface_spl() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (mint_key, mint_account(authority, 9, token_program)),
-            (to_key, token_account(mint_key, authority, 0, token_program)),
+            signer_account(authority),
+            mint_account(mint_key, authority, 9, token_program),
+            token_account(to_key, mint_key, authority, 0, token_program),
         ],
     );
     assert!(
@@ -121,12 +121,12 @@ fn mint_to_interface_t22() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (mint_key, mint_account(authority, 9, token_program)),
-            (to_key, token_account(mint_key, authority, 0, token_program)),
+            signer_account(authority),
+            mint_account(mint_key, authority, 9, token_program),
+            token_account(to_key, mint_key, authority, 0, token_program),
         ],
     );
     assert!(
@@ -157,12 +157,12 @@ fn burn_spl() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (from_key, token_account(mint_key, authority, 1000, token_program)),
-            (mint_key, mint_account(authority, 9, token_program)),
+            signer_account(authority),
+            token_account(from_key, mint_key, authority, 1000, token_program),
+            mint_account(mint_key, authority, 9, token_program),
         ],
     );
     assert!(result.is_ok(), "burn SPL should succeed: {:?}", result.raw_result);
@@ -189,12 +189,12 @@ fn burn_t22() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (from_key, token_account(mint_key, authority, 1000, token_program)),
-            (mint_key, mint_account(authority, 9, token_program)),
+            signer_account(authority),
+            token_account(from_key, mint_key, authority, 1000, token_program),
+            mint_account(mint_key, authority, 9, token_program),
         ],
     );
     assert!(result.is_ok(), "burn T22 should succeed: {:?}", result.raw_result);
@@ -221,12 +221,12 @@ fn burn_interface_spl() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (from_key, token_account(mint_key, authority, 1000, token_program)),
-            (mint_key, mint_account(authority, 9, token_program)),
+            signer_account(authority),
+            token_account(from_key, mint_key, authority, 1000, token_program),
+            mint_account(mint_key, authority, 9, token_program),
         ],
     );
     assert!(
@@ -253,12 +253,12 @@ fn burn_interface_t22() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (authority, signer_account()),
-            (from_key, token_account(mint_key, authority, 1000, token_program)),
-            (mint_key, mint_account(authority, 9, token_program)),
+            signer_account(authority),
+            token_account(from_key, mint_key, authority, 1000, token_program),
+            mint_account(mint_key, authority, 9, token_program),
         ],
     );
     assert!(

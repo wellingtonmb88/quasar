@@ -1,6 +1,6 @@
 use {
     crate::helpers::*,
-    quasar_svm::{Account, Pubkey, Instruction},
+    quasar_svm::{Pubkey, Instruction},
     quasar_test_token_validate::client::*,
 };
 
@@ -22,11 +22,11 @@ fn mint_spl_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_ok(), "should succeed: {:?}", result.raw_result);
@@ -47,11 +47,11 @@ fn mint_spl_wrong_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(wrong_authority, 6, token_program)),
-            (authority, signer_account()),
+            mint_account(mint_key, wrong_authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: authority mismatch");
@@ -71,11 +71,11 @@ fn mint_spl_wrong_decimals() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(authority, 9, token_program)),
-            (authority, signer_account()),
+            mint_account(mint_key, authority, 9, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: decimals mismatch (9 != 6)");
@@ -95,14 +95,11 @@ fn mint_spl_wrong_owner() {
     }
     .into();
 
-    let mut bad_account = mint_account(authority, 6, token_program);
-    bad_account.owner = Pubkey::default();
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, bad_account),
-            (authority, signer_account()),
+            raw_account(mint_key, 1_000_000, pack_mint_data(authority, 6), Pubkey::default()),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: account owner is wrong program");
@@ -122,19 +119,11 @@ fn mint_spl_uninitialized() {
     }
     .into();
 
-    let uninit_account = Account {
-        lamports: 1_000_000,
-        data: vec![0u8; 82],
-        owner: token_program,
-        executable: false,
-        rent_epoch: 0,
-    };
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, uninit_account),
-            (authority, signer_account()),
+            raw_account(mint_key, 1_000_000, vec![0u8; 82], token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: uninitialized mint account");
@@ -154,19 +143,11 @@ fn mint_spl_data_too_small() {
     }
     .into();
 
-    let small_account = Account {
-        lamports: 1_000_000,
-        data: vec![0u8; 10],
-        owner: token_program,
-        executable: false,
-        rent_epoch: 0,
-    };
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, small_account),
-            (authority, signer_account()),
+            raw_account(mint_key, 1_000_000, vec![0u8; 10], token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: data too small");
@@ -190,11 +171,11 @@ fn mint_t22_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_ok(), "should succeed: {:?}", result.raw_result);
@@ -215,11 +196,11 @@ fn mint_t22_wrong_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(wrong_authority, 6, token_program)),
-            (authority, signer_account()),
+            mint_account(mint_key, wrong_authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: authority mismatch");
@@ -239,11 +220,11 @@ fn mint_t22_wrong_decimals() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(authority, 9, token_program)),
-            (authority, signer_account()),
+            mint_account(mint_key, authority, 9, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: decimals mismatch (9 != 6)");
@@ -263,14 +244,11 @@ fn mint_t22_wrong_owner() {
     }
     .into();
 
-    let mut bad_account = mint_account(authority, 6, token_program);
-    bad_account.owner = Pubkey::default();
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, bad_account),
-            (authority, signer_account()),
+            raw_account(mint_key, 1_000_000, pack_mint_data(authority, 6), Pubkey::default()),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: account owner is wrong program");
@@ -290,19 +268,11 @@ fn mint_t22_uninitialized() {
     }
     .into();
 
-    let uninit_account = Account {
-        lamports: 1_000_000,
-        data: vec![0u8; 82],
-        owner: token_program,
-        executable: false,
-        rent_epoch: 0,
-    };
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, uninit_account),
-            (authority, signer_account()),
+            raw_account(mint_key, 1_000_000, vec![0u8; 82], token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: uninitialized mint account");
@@ -322,19 +292,11 @@ fn mint_t22_data_too_small() {
     }
     .into();
 
-    let small_account = Account {
-        lamports: 1_000_000,
-        data: vec![0u8; 10],
-        owner: token_program,
-        executable: false,
-        rent_epoch: 0,
-    };
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, small_account),
-            (authority, signer_account()),
+            raw_account(mint_key, 1_000_000, vec![0u8; 10], token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: data too small");
@@ -358,11 +320,11 @@ fn mint_interface_spl_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_ok(), "should succeed: {:?}", result.raw_result);
@@ -383,11 +345,11 @@ fn mint_interface_spl_wrong_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(wrong_authority, 6, token_program)),
-            (authority, signer_account()),
+            mint_account(mint_key, wrong_authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: authority mismatch");
@@ -407,11 +369,11 @@ fn mint_interface_spl_wrong_decimals() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(authority, 9, token_program)),
-            (authority, signer_account()),
+            mint_account(mint_key, authority, 9, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: decimals mismatch (9 != 6)");
@@ -431,14 +393,11 @@ fn mint_interface_spl_wrong_owner() {
     }
     .into();
 
-    let mut bad_account = mint_account(authority, 6, token_program);
-    bad_account.owner = Pubkey::default();
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, bad_account),
-            (authority, signer_account()),
+            raw_account(mint_key, 1_000_000, pack_mint_data(authority, 6), Pubkey::default()),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: account owner is wrong program");
@@ -458,19 +417,11 @@ fn mint_interface_spl_uninitialized() {
     }
     .into();
 
-    let uninit_account = Account {
-        lamports: 1_000_000,
-        data: vec![0u8; 82],
-        owner: token_program,
-        executable: false,
-        rent_epoch: 0,
-    };
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, uninit_account),
-            (authority, signer_account()),
+            raw_account(mint_key, 1_000_000, vec![0u8; 82], token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: uninitialized mint account");
@@ -490,19 +441,11 @@ fn mint_interface_spl_data_too_small() {
     }
     .into();
 
-    let small_account = Account {
-        lamports: 1_000_000,
-        data: vec![0u8; 10],
-        owner: token_program,
-        executable: false,
-        rent_epoch: 0,
-    };
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, small_account),
-            (authority, signer_account()),
+            raw_account(mint_key, 1_000_000, vec![0u8; 10], token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: data too small");
@@ -526,11 +469,11 @@ fn mint_interface_t22_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_ok(), "should succeed: {:?}", result.raw_result);
@@ -551,11 +494,11 @@ fn mint_interface_t22_wrong_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(wrong_authority, 6, token_program)),
-            (authority, signer_account()),
+            mint_account(mint_key, wrong_authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: authority mismatch");
@@ -575,11 +518,11 @@ fn mint_interface_t22_wrong_decimals() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(authority, 9, token_program)),
-            (authority, signer_account()),
+            mint_account(mint_key, authority, 9, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: decimals mismatch (9 != 6)");
@@ -599,14 +542,11 @@ fn mint_interface_t22_wrong_owner() {
     }
     .into();
 
-    let mut bad_account = mint_account(authority, 6, token_program);
-    bad_account.owner = Pubkey::default();
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, bad_account),
-            (authority, signer_account()),
+            raw_account(mint_key, 1_000_000, pack_mint_data(authority, 6), Pubkey::default()),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: account owner is wrong program");
@@ -626,19 +566,11 @@ fn mint_interface_t22_uninitialized() {
     }
     .into();
 
-    let uninit_account = Account {
-        lamports: 1_000_000,
-        data: vec![0u8; 82],
-        owner: token_program,
-        executable: false,
-        rent_epoch: 0,
-    };
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, uninit_account),
-            (authority, signer_account()),
+            raw_account(mint_key, 1_000_000, vec![0u8; 82], token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: uninitialized mint account");
@@ -658,19 +590,11 @@ fn mint_interface_t22_data_too_small() {
     }
     .into();
 
-    let small_account = Account {
-        lamports: 1_000_000,
-        data: vec![0u8; 10],
-        owner: token_program,
-        executable: false,
-        rent_epoch: 0,
-    };
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, small_account),
-            (authority, signer_account()),
+            raw_account(mint_key, 1_000_000, vec![0u8; 10], token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: data too small");
@@ -693,11 +617,11 @@ fn mint_no_program_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_ok(), "should succeed: {:?}", result.raw_result);
@@ -717,11 +641,11 @@ fn mint_no_program_wrong_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(wrong_authority, 6, token_program)),
-            (authority, signer_account()),
+            mint_account(mint_key, wrong_authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: authority mismatch");
@@ -740,11 +664,11 @@ fn mint_no_program_wrong_decimals() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(authority, 9, token_program)),
-            (authority, signer_account()),
+            mint_account(mint_key, authority, 9, token_program),
+            signer_account(authority),
         ],
     );
     assert!(result.is_err(), "should fail: decimals mismatch (9 != 6)");
@@ -770,12 +694,12 @@ fn mint_spl_freeze_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account_with_freeze(authority, 6, freeze_auth, token_program)),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            mint_account_with_freeze(mint_key, authority, 6, freeze_auth, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(result.is_ok(), "should succeed: {:?}", result.raw_result);
@@ -798,12 +722,12 @@ fn mint_spl_freeze_wrong_freeze_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account_with_freeze(authority, 6, wrong_freeze, token_program)),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            mint_account_with_freeze(mint_key, authority, 6, wrong_freeze, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(result.is_err(), "should fail: freeze authority mismatch");
@@ -826,12 +750,12 @@ fn mint_spl_freeze_missing_on_chain() {
     .into();
 
     // On-chain mint has no freeze_authority, but handler expects one
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(result.is_err(), "should fail: on-chain mint has no freeze authority");
@@ -857,12 +781,12 @@ fn mint_t22_freeze_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account_with_freeze(authority, 6, freeze_auth, token_program)),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            mint_account_with_freeze(mint_key, authority, 6, freeze_auth, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(result.is_ok(), "should succeed: {:?}", result.raw_result);
@@ -885,12 +809,12 @@ fn mint_t22_freeze_wrong_freeze_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account_with_freeze(authority, 6, wrong_freeze, token_program)),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            mint_account_with_freeze(mint_key, authority, 6, wrong_freeze, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(result.is_err(), "should fail: freeze authority mismatch");
@@ -913,12 +837,12 @@ fn mint_t22_freeze_missing_on_chain() {
     .into();
 
     // On-chain mint has no freeze_authority, but handler expects one
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(result.is_err(), "should fail: on-chain mint has no freeze authority");
@@ -944,12 +868,12 @@ fn mint_interface_spl_freeze_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account_with_freeze(authority, 6, freeze_auth, token_program)),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            mint_account_with_freeze(mint_key, authority, 6, freeze_auth, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(result.is_ok(), "should succeed: {:?}", result.raw_result);
@@ -972,12 +896,12 @@ fn mint_interface_spl_freeze_wrong_freeze_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account_with_freeze(authority, 6, wrong_freeze, token_program)),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            mint_account_with_freeze(mint_key, authority, 6, wrong_freeze, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(result.is_err(), "should fail: freeze authority mismatch");
@@ -1000,12 +924,12 @@ fn mint_interface_spl_freeze_missing_on_chain() {
     .into();
 
     // On-chain mint has no freeze_authority, but handler expects one
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(result.is_err(), "should fail: on-chain mint has no freeze authority");
@@ -1031,12 +955,12 @@ fn mint_interface_t22_freeze_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account_with_freeze(authority, 6, freeze_auth, token_program)),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            mint_account_with_freeze(mint_key, authority, 6, freeze_auth, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(result.is_ok(), "should succeed: {:?}", result.raw_result);
@@ -1059,12 +983,12 @@ fn mint_interface_t22_freeze_wrong_freeze_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account_with_freeze(authority, 6, wrong_freeze, token_program)),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            mint_account_with_freeze(mint_key, authority, 6, wrong_freeze, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(result.is_err(), "should fail: freeze authority mismatch");
@@ -1087,12 +1011,12 @@ fn mint_interface_t22_freeze_missing_on_chain() {
     .into();
 
     // On-chain mint has no freeze_authority, but handler expects one
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(result.is_err(), "should fail: on-chain mint has no freeze authority");

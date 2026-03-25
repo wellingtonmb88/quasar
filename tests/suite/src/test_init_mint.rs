@@ -1,6 +1,6 @@
 use {
     crate::helpers::*,
-    quasar_svm::{Account, Instruction, Pubkey},
+    quasar_svm::{Instruction, Pubkey},
     quasar_test_token_init::client::*,
 };
 
@@ -26,12 +26,12 @@ fn init_mint_spl_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, Account::new(0, 0, &system_program)),
-            (authority, signer_account()),
+            rich_signer_account(payer),
+            empty_account(mint_key),
+            signer_account(authority),
         ],
     );
     assert!(
@@ -59,12 +59,12 @@ fn init_mint_spl_already_initialized() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            rich_signer_account(payer),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(
@@ -95,12 +95,12 @@ fn init_mint_t22_happy() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, Account::new(0, 0, &system_program)),
-            (authority, signer_account()),
+            rich_signer_account(payer),
+            empty_account(mint_key),
+            signer_account(authority),
         ],
     );
     assert!(
@@ -128,12 +128,12 @@ fn init_mint_t22_already_initialized() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            rich_signer_account(payer),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(
@@ -164,12 +164,12 @@ fn init_if_needed_mint_spl_happy_new() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, Account::new(0, 0, &system_program)),
-            (authority, signer_account()),
+            rich_signer_account(payer),
+            empty_account(mint_key),
+            signer_account(authority),
         ],
     );
     assert!(
@@ -197,12 +197,12 @@ fn init_if_needed_mint_spl_existing_valid() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            rich_signer_account(payer),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(
@@ -230,12 +230,12 @@ fn init_if_needed_mint_spl_wrong_decimals() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, mint_account(authority, 9, token_program)),
-            (authority, signer_account()),
+            rich_signer_account(payer),
+            mint_account(mint_key, authority, 9, token_program),
+            signer_account(authority),
         ],
     );
     assert!(
@@ -263,12 +263,12 @@ fn init_if_needed_mint_spl_wrong_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, mint_account(wrong_authority, 6, token_program)),
-            (authority, signer_account()),
+            rich_signer_account(payer),
+            mint_account(mint_key, wrong_authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(
@@ -295,15 +295,17 @@ fn init_if_needed_mint_spl_wrong_owner() {
     }
     .into();
 
-    let mut bad_account = mint_account(authority, 6, token_program);
-    bad_account.owner = Pubkey::default();
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, bad_account),
-            (authority, signer_account()),
+            rich_signer_account(payer),
+            raw_account(
+                mint_key,
+                1_000_000,
+                pack_mint_data(authority, 6),
+                Pubkey::default(),
+            ),
+            signer_account(authority),
         ],
     );
     assert!(
@@ -333,15 +335,12 @@ fn init_if_needed_mint_spl_unexpected_freeze() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (
-                mint_key,
-                mint_account_with_freeze(authority, 6, freeze_auth, token_program),
-            ),
-            (authority, signer_account()),
+            rich_signer_account(payer),
+            mint_account_with_freeze(mint_key, authority, 6, freeze_auth, token_program),
+            signer_account(authority),
         ],
     );
     assert!(
@@ -373,12 +372,12 @@ fn init_if_needed_mint_t22_happy_new() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, Account::new(0, 0, &system_program)),
-            (authority, signer_account()),
+            rich_signer_account(payer),
+            empty_account(mint_key),
+            signer_account(authority),
         ],
     );
     assert!(
@@ -406,12 +405,12 @@ fn init_if_needed_mint_t22_existing_valid() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
+            rich_signer_account(payer),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(
@@ -439,12 +438,12 @@ fn init_if_needed_mint_t22_wrong_decimals() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, mint_account(authority, 9, token_program)),
-            (authority, signer_account()),
+            rich_signer_account(payer),
+            mint_account(mint_key, authority, 9, token_program),
+            signer_account(authority),
         ],
     );
     assert!(
@@ -472,12 +471,12 @@ fn init_if_needed_mint_t22_wrong_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, mint_account(wrong_authority, 6, token_program)),
-            (authority, signer_account()),
+            rich_signer_account(payer),
+            mint_account(mint_key, wrong_authority, 6, token_program),
+            signer_account(authority),
         ],
     );
     assert!(
@@ -504,15 +503,17 @@ fn init_if_needed_mint_t22_wrong_owner() {
     }
     .into();
 
-    let mut bad_account = mint_account(authority, 6, token_program);
-    bad_account.owner = Pubkey::default();
-
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, bad_account),
-            (authority, signer_account()),
+            rich_signer_account(payer),
+            raw_account(
+                mint_key,
+                1_000_000,
+                pack_mint_data(authority, 6),
+                Pubkey::default(),
+            ),
+            signer_account(authority),
         ],
     );
     assert!(
@@ -540,15 +541,12 @@ fn init_if_needed_mint_t22_unexpected_freeze() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (
-                mint_key,
-                mint_account_with_freeze(authority, 6, freeze_auth, token_program),
-            ),
-            (authority, signer_account()),
+            rich_signer_account(payer),
+            mint_account_with_freeze(mint_key, authority, 6, freeze_auth, token_program),
+            signer_account(authority),
         ],
     );
     assert!(
@@ -582,13 +580,13 @@ fn init_if_needed_mint_freeze_spl_happy_new() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, Account::new(0, 0, &system_program)),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            rich_signer_account(payer),
+            empty_account(mint_key),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(
@@ -618,16 +616,13 @@ fn init_if_needed_mint_freeze_spl_existing_valid() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (
-                mint_key,
-                mint_account_with_freeze(authority, 6, freeze_auth, token_program),
-            ),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            rich_signer_account(payer),
+            mint_account_with_freeze(mint_key, authority, 6, freeze_auth, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(
@@ -658,16 +653,13 @@ fn init_if_needed_mint_freeze_spl_wrong_freeze_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (
-                mint_key,
-                mint_account_with_freeze(authority, 6, wrong_freeze, token_program),
-            ),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            rich_signer_account(payer),
+            mint_account_with_freeze(mint_key, authority, 6, wrong_freeze, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(
@@ -697,13 +689,13 @@ fn init_if_needed_mint_freeze_spl_missing_freeze_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            rich_signer_account(payer),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(
@@ -736,13 +728,13 @@ fn init_if_needed_mint_freeze_t22_happy_new() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, Account::new(0, 0, &system_program)),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            rich_signer_account(payer),
+            empty_account(mint_key),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(
@@ -772,16 +764,13 @@ fn init_if_needed_mint_freeze_t22_existing_valid() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (
-                mint_key,
-                mint_account_with_freeze(authority, 6, freeze_auth, token_program),
-            ),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            rich_signer_account(payer),
+            mint_account_with_freeze(mint_key, authority, 6, freeze_auth, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(
@@ -812,16 +801,13 @@ fn init_if_needed_mint_freeze_t22_wrong_freeze_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (
-                mint_key,
-                mint_account_with_freeze(authority, 6, wrong_freeze, token_program),
-            ),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            rich_signer_account(payer),
+            mint_account_with_freeze(mint_key, authority, 6, wrong_freeze, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(
@@ -850,13 +836,13 @@ fn init_if_needed_mint_freeze_t22_missing_freeze_authority() {
     }
     .into();
 
-    let result = svm.process_instructions(
-        &[instruction],
+    let result = svm.process_instruction(
+        &instruction,
         &[
-            (payer, rich_signer_account()),
-            (mint_key, mint_account(authority, 6, token_program)),
-            (authority, signer_account()),
-            (freeze_auth, signer_account()),
+            rich_signer_account(payer),
+            mint_account(mint_key, authority, 6, token_program),
+            signer_account(authority),
+            signer_account(freeze_auth),
         ],
     );
     assert!(
