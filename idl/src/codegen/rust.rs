@@ -40,7 +40,8 @@ pub fn has_pdas(parsed: &ParsedProgram) -> bool {
 /// Generate a standalone Rust client crate from parsed program data.
 ///
 /// Returns a `Vec<(relative_path, file_content)>` where paths are relative to
-/// the client crate `src/` directory (e.g. `"lib.rs"`, `"instructions/mod.rs"`).
+/// the client crate `src/` directory (e.g. `"lib.rs"`,
+/// `"instructions/mod.rs"`).
 pub fn generate_client(parsed: &ParsedProgram) -> Vec<(String, String)> {
     let mut files: Vec<(String, String)> = Vec::new();
 
@@ -59,7 +60,18 @@ pub fn generate_client(parsed: &ParsedProgram) -> Vec<(String, String)> {
     let has_pdas = !pdas.is_empty();
 
     // --- lib.rs ---
-    files.push(("lib.rs".to_string(), emit_lib_rs(parsed, has_instructions, has_state, has_events, has_types, has_errors, has_pdas)));
+    files.push((
+        "lib.rs".to_string(),
+        emit_lib_rs(
+            parsed,
+            has_instructions,
+            has_state,
+            has_events,
+            has_types,
+            has_errors,
+            has_pdas,
+        ),
+    ));
 
     // --- instructions/ ---
     if has_instructions {
@@ -142,7 +154,11 @@ fn emit_lib_rs(
         ("pda", has_pdas),
     ];
 
-    let active: Vec<&&str> = modules.iter().filter(|(_, active)| *active).map(|(name, _)| name).collect();
+    let active: Vec<&&str> = modules
+        .iter()
+        .filter(|(_, active)| *active)
+        .map(|(name, _)| name)
+        .collect();
 
     if !active.is_empty() {
         out.push('\n');
@@ -178,13 +194,23 @@ fn emit_instructions(
     for ix in &parsed.instructions {
         for (_, ty) in &ix.args {
             let idl_ty = helpers::map_type_from_syn(ty);
-            collect_wrapper_needs(&idl_ty, &mut needs_dyn_bytes, &mut needs_dyn_vec, &mut needs_tail_bytes);
+            collect_wrapper_needs(
+                &idl_ty,
+                &mut needs_dyn_bytes,
+                &mut needs_dyn_vec,
+                &mut needs_tail_bytes,
+            );
             if field_needs_address(&idl_ty) {
                 needs_address = true;
             }
         }
     }
-    emit_wrapper_imports(&mut mod_rs, needs_dyn_bytes, needs_dyn_vec, needs_tail_bytes);
+    emit_wrapper_imports(
+        &mut mod_rs,
+        needs_dyn_bytes,
+        needs_dyn_vec,
+        needs_tail_bytes,
+    );
     if needs_address {
         mod_rs.push_str("use solana_address::Address;\n");
     }
@@ -225,7 +251,8 @@ fn emit_instructions(
                 if i > 0 {
                     write!(mod_rs, ", ").expect("write to String");
                 }
-                write!(mod_rs, "{}: {}", name, rust_field_type(&arg_types[i])).expect("write to String");
+                write!(mod_rs, "{}: {}", name, rust_field_type(&arg_types[i]))
+                    .expect("write to String");
             }
             writeln!(mod_rs, " }},").expect("write to String");
         }
@@ -236,7 +263,11 @@ fn emit_instructions(
     mod_rs.push_str("pub fn decode_instruction(data: &[u8]) -> Option<ProgramInstruction> {\n");
 
     // Determine discriminator width (use first instruction's disc length)
-    let disc_len = parsed.instructions.first().map(|ix| ix.discriminator.len()).unwrap_or(1);
+    let disc_len = parsed
+        .instructions
+        .first()
+        .map(|ix| ix.discriminator.len())
+        .unwrap_or(1);
 
     if disc_len == 1 {
         mod_rs.push_str("    let disc = *data.first()?;\n");
@@ -260,7 +291,8 @@ fn emit_instructions(
             writeln!(mod_rs, "Some(ProgramInstruction::{}),", pascal).expect("write to String");
         } else {
             mod_rs.push_str("{\n");
-            writeln!(mod_rs, "            let payload = &data[{}..];", disc_len).expect("write to String");
+            writeln!(mod_rs, "            let payload = &data[{}..];", disc_len)
+                .expect("write to String");
             let arg_types: Vec<IdlType> = ix
                 .args
                 .iter()
@@ -296,7 +328,12 @@ fn emit_instructions(
                     }
                 }
             }
-            write!(mod_rs, "            Some(ProgramInstruction::{} {{ ", pascal).expect("write to String");
+            write!(
+                mod_rs,
+                "            Some(ProgramInstruction::{} {{ ",
+                pascal
+            )
+            .expect("write to String");
             for (i, (name, _)) in ix.args.iter().enumerate() {
                 if i > 0 {
                     write!(mod_rs, ", ").expect("write to String");
@@ -356,7 +393,12 @@ fn emit_single_instruction(
     let mut needs_dyn_vec = false;
     let mut needs_tail_bytes = false;
     for arg_ty in &arg_types {
-        collect_wrapper_needs(arg_ty, &mut needs_dyn_bytes, &mut needs_dyn_vec, &mut needs_tail_bytes);
+        collect_wrapper_needs(
+            arg_ty,
+            &mut needs_dyn_bytes,
+            &mut needs_dyn_vec,
+            &mut needs_tail_bytes,
+        );
     }
     emit_wrapper_imports(&mut out, needs_dyn_bytes, needs_dyn_vec, needs_tail_bytes);
 
@@ -408,8 +450,7 @@ fn emit_single_instruction(
     }
     if let Some(accs) = accounts_struct {
         for field in &accs.fields {
-            writeln!(out, "            {},", account_meta_expr(field))
-                .expect("write to String");
+            writeln!(out, "            {},", account_meta_expr(field)).expect("write to String");
         }
     }
     out.push_str("        ];\n");
@@ -564,7 +605,12 @@ fn emit_single_state_account(
     let mut needs_tail_bytes = false;
     for (_, ty) in &acc.fields {
         let idl_ty = helpers::map_type_from_syn(ty);
-        collect_wrapper_needs(&idl_ty, &mut needs_dyn_bytes, &mut needs_dyn_vec, &mut needs_tail_bytes);
+        collect_wrapper_needs(
+            &idl_ty,
+            &mut needs_dyn_bytes,
+            &mut needs_dyn_vec,
+            &mut needs_tail_bytes,
+        );
         if field_needs_address(&idl_ty) {
             needs_address = true;
         }
@@ -589,7 +635,13 @@ fn emit_single_state_account(
     out.push('\n');
 
     // Struct + manual impls
-    emit_manual_impls(&mut out, &acc.name, &acc.discriminator, &acc.fields, "account");
+    emit_manual_impls(
+        &mut out,
+        &acc.name,
+        &acc.discriminator,
+        &acc.fields,
+        "account",
+    );
 
     out
 }
@@ -714,7 +766,12 @@ fn emit_single_event(
     let mut needs_tail_bytes = false;
     for (_, ty) in &ev.fields {
         let idl_ty = helpers::map_type_from_syn(ty);
-        collect_wrapper_needs(&idl_ty, &mut needs_dyn_bytes, &mut needs_dyn_vec, &mut needs_tail_bytes);
+        collect_wrapper_needs(
+            &idl_ty,
+            &mut needs_dyn_bytes,
+            &mut needs_dyn_vec,
+            &mut needs_tail_bytes,
+        );
         if field_needs_address(&idl_ty) {
             needs_address = true;
         }
@@ -728,7 +785,8 @@ fn emit_single_event(
     out.push('\n');
 
     // Discriminator constant — strip trailing "Event" to avoid stutter
-    // (e.g. MakeEvent → MAKE_EVENT_DISCRIMINATOR, not MAKE_EVENT_EVENT_DISCRIMINATOR)
+    // (e.g. MakeEvent → MAKE_EVENT_DISCRIMINATOR, not
+    // MAKE_EVENT_EVENT_DISCRIMINATOR)
     let base_name = ev.name.strip_suffix("Event").unwrap_or(&ev.name);
     let const_name = pascal_to_screaming_snake(base_name);
     let disc_str = format_disc_list(&ev.discriminator);
@@ -795,7 +853,12 @@ fn emit_single_type(
     let mut needs_dyn_vec = false;
     let mut needs_tail_bytes = false;
     for (_, fty) in fields {
-        collect_wrapper_needs(fty, &mut needs_dyn_bytes, &mut needs_dyn_vec, &mut needs_tail_bytes);
+        collect_wrapper_needs(
+            fty,
+            &mut needs_dyn_bytes,
+            &mut needs_dyn_vec,
+            &mut needs_tail_bytes,
+        );
         if field_needs_address(fty) {
             needs_address = true;
         }
@@ -949,16 +1012,20 @@ fn emit_pda(pdas: &[PdaInfo]) -> String {
 
     for pda in pdas {
         // Build doc comment showing seeds
-        let seed_desc: Vec<String> = pda.seeds.iter().map(|s| match s {
-            OwnedSeed::ByteString(bytes) => {
-                if bytes.iter().all(|b| b.is_ascii_graphic() || *b == b' ') {
-                    format!("b\"{}\"", String::from_utf8_lossy(bytes))
-                } else {
-                    format!("&{:?}", bytes)
+        let seed_desc: Vec<String> = pda
+            .seeds
+            .iter()
+            .map(|s| match s {
+                OwnedSeed::ByteString(bytes) => {
+                    if bytes.iter().all(|b| b.is_ascii_graphic() || *b == b' ') {
+                        format!("b\"{}\"", String::from_utf8_lossy(bytes))
+                    } else {
+                        format!("&{:?}", bytes)
+                    }
                 }
-            }
-            OwnedSeed::AccountRef(name) => name.clone(),
-        }).collect();
+                OwnedSeed::AccountRef(name) => name.clone(),
+            })
+            .collect();
         writeln!(out, "/// Seeds: [{}]", seed_desc.join(", ")).expect("write to String");
 
         // Function parameters: collect AccountRef seeds as parameters
@@ -971,22 +1038,38 @@ fn emit_pda(pdas: &[PdaInfo]) -> String {
         params.push("program_id: &Address".to_string());
 
         let fn_name = format!("find_{}_address", pascal_to_snake(&pda.field_name));
-        writeln!(out, "pub fn {}({}) -> (Address, u8) {{", fn_name, params.join(", ")).expect("write to String");
+        writeln!(
+            out,
+            "pub fn {}({}) -> (Address, u8) {{",
+            fn_name,
+            params.join(", ")
+        )
+        .expect("write to String");
 
         // Build seeds array
-        let seed_exprs: Vec<String> = pda.seeds.iter().map(|s| match s {
-            OwnedSeed::ByteString(bytes) => {
-                if bytes.iter().all(|b| b.is_ascii_graphic() || *b == b' ') {
-                    format!("b\"{}\"", String::from_utf8_lossy(bytes))
-                } else {
-                    let byte_list: Vec<String> = bytes.iter().map(|b| format!("{}", b)).collect();
-                    format!("&[{}]", byte_list.join(", "))
+        let seed_exprs: Vec<String> = pda
+            .seeds
+            .iter()
+            .map(|s| match s {
+                OwnedSeed::ByteString(bytes) => {
+                    if bytes.iter().all(|b| b.is_ascii_graphic() || *b == b' ') {
+                        format!("b\"{}\"", String::from_utf8_lossy(bytes))
+                    } else {
+                        let byte_list: Vec<String> =
+                            bytes.iter().map(|b| format!("{}", b)).collect();
+                        format!("&[{}]", byte_list.join(", "))
+                    }
                 }
-            }
-            OwnedSeed::AccountRef(name) => format!("{}.as_ref()", name),
-        }).collect();
+                OwnedSeed::AccountRef(name) => format!("{}.as_ref()", name),
+            })
+            .collect();
 
-        writeln!(out, "    Address::find_program_address(&[{}], program_id)", seed_exprs.join(", ")).expect("write to String");
+        writeln!(
+            out,
+            "    Address::find_program_address(&[{}], program_id)",
+            seed_exprs.join(", ")
+        )
+        .expect("write to String");
         out.push_str("}\n\n");
     }
 
@@ -1053,8 +1136,8 @@ fn build_type_map(parsed: &ParsedProgram) -> HashMap<String, Vec<(String, IdlTyp
     map
 }
 
-/// Emit struct definition + manual SchemaWrite/SchemaRead impls with discriminator
-/// handling. Used for both accounts and events.
+/// Emit struct definition + manual SchemaWrite/SchemaRead impls with
+/// discriminator handling. Used for both accounts and events.
 fn emit_manual_impls(
     out: &mut String,
     name: &str,
@@ -1096,18 +1179,15 @@ fn emit_manual_impls(
         types
     };
 
-    // Strip trailing kind suffix to avoid stutter (e.g. MakeEvent + EVENT → MAKE_EVENT, not MAKE_EVENT_EVENT)
+    // Strip trailing kind suffix to avoid stutter (e.g. MakeEvent + EVENT →
+    // MAKE_EVENT, not MAKE_EVENT_EVENT)
     let base_name = if kind == "event" {
         name.strip_suffix("Event").unwrap_or(name)
     } else {
         name
     };
     let const_name = pascal_to_screaming_snake(base_name);
-    let disc_const = format!(
-        "{}_{}_DISCRIMINATOR",
-        const_name,
-        kind.to_ascii_uppercase()
-    );
+    let disc_const = format!("{}_{}_DISCRIMINATOR", const_name, kind.to_ascii_uppercase());
 
     // --- SchemaWrite impl ---
     writeln!(
@@ -1162,7 +1242,8 @@ fn emit_manual_impls(
     out.push_str("{\n");
     out.push_str("    type Dst = Self;\n\n");
     out.push_str(
-        "    fn read(mut reader: impl Reader<'de>, dst: &mut MaybeUninit<Self>) -> ReadResult<()> {\n",
+        "    fn read(mut reader: impl Reader<'de>, dst: &mut MaybeUninit<Self>) -> ReadResult<()> \
+         {\n",
     );
 
     if discriminator.len() == 1 {
@@ -1194,7 +1275,8 @@ fn emit_manual_impls(
     for (field_name, field_type) in &fields {
         writeln!(
             out,
-            "            {field_name}: <{field_type} as SchemaRead<'de, C>>::get(reader.by_ref())?,"
+            "            {field_name}: <{field_type} as SchemaRead<'de, \
+             C>>::get(reader.by_ref())?,"
         )
         .expect("write to String");
     }

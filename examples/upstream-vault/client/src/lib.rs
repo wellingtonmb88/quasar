@@ -1,7 +1,9 @@
-use std::vec;
-use wincode::{SchemaWrite, SchemaRead};
-use solana_address::Address;
-use solana_instruction::{AccountMeta, Instruction};
+use {
+    solana_address::Address,
+    solana_instruction::{AccountMeta, Instruction},
+    std::vec,
+    wincode::{SchemaRead, SchemaWrite},
+};
 
 pub const ID: Address = solana_address::address!("33333333333333333333333333333333333333333333");
 
@@ -50,4 +52,3 @@ impl From<WithdrawInstruction> for Instruction {
         }
     }
 }
-

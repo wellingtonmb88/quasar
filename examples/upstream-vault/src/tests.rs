@@ -1,8 +1,8 @@
 extern crate std;
 use {
-    upstream_vault_client::*,
     quasar_svm::{Account, Instruction, Pubkey, QuasarSvm},
     std::{println, vec},
+    upstream_vault_client::*,
 };
 
 fn setup() -> QuasarSvm {

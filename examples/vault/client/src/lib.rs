@@ -5,5 +5,4 @@ pub const ID: Address = solana_address::address!("333333333333333333333333333333
 pub mod instructions;
 pub mod pda;
 
-pub use instructions::*;
-pub use pda::*;
+pub use {instructions::*, pda::*};

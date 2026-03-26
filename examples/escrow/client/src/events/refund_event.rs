@@ -1,9 +1,13 @@
-use wincode::{SchemaWrite, SchemaRead};
-use wincode::config::ConfigCore;
-use wincode::error::{ReadError, ReadResult, WriteResult};
-use wincode::io::{Reader, Writer};
-use std::mem::MaybeUninit;
-use solana_address::Address;
+use {
+    solana_address::Address,
+    std::mem::MaybeUninit,
+    wincode::{
+        config::ConfigCore,
+        error::{ReadError, ReadResult, WriteResult},
+        io::{Reader, Writer},
+        SchemaRead, SchemaWrite,
+    },
+};
 
 pub const REFUND_EVENT_DISCRIMINATOR: &[u8] = &[2];
 
@@ -19,8 +23,7 @@ where
     type Src = Self;
 
     fn size_of(src: &Self) -> WriteResult<usize> {
-        Ok(1
-            + <Address as SchemaWrite<C>>::size_of(&src.escrow)?)
+        Ok(1 + <Address as SchemaWrite<C>>::size_of(&src.escrow)?)
     }
 
     fn write(mut writer: impl Writer, src: &Self) -> WriteResult<()> {
@@ -47,4 +50,3 @@ where
         Ok(())
     }
 }
-

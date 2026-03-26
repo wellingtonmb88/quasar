@@ -1,10 +1,8 @@
 pub mod make;
-pub mod take;
 pub mod refund;
+pub mod take;
 
-pub use make::*;
-pub use take::*;
-pub use refund::*;
+pub use {make::*, refund::*, take::*};
 
 pub enum ProgramInstruction {
     Make { deposit: u64, receive: u64 },

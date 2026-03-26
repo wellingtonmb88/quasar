@@ -621,7 +621,11 @@ fn test_program() -> ParsedProgram {
 
 /// Concatenate all generated file contents for assertion checking.
 fn all_content(files: &[(String, String)]) -> String {
-    files.iter().map(|(_, content)| content.as_str()).collect::<Vec<_>>().join("\n")
+    files
+        .iter()
+        .map(|(_, content)| content.as_str())
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 // ---------------------------------------------------------------------------
@@ -1155,7 +1159,10 @@ fn rust_codegen_events() {
         "{code}"
     );
     assert!(!code.contains("let mut offset"), "{code}");
-    assert!(!code.contains("payload"), "no manual payload slicing: {code}");
+    assert!(
+        !code.contains("payload"),
+        "no manual payload slicing: {code}"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -1726,8 +1733,16 @@ fn extract_instruction_ctx_with_remaining() {
 fn rust_codegen_error_enum() {
     let mut parsed = test_program();
     parsed.errors = vec![
-        IdlError { code: 100, name: "Unauthorized".to_string(), msg: Some("Not authorized".to_string()) },
-        IdlError { code: 101, name: "Overflow".to_string(), msg: None },
+        IdlError {
+            code: 100,
+            name: "Unauthorized".to_string(),
+            msg: Some("Not authorized".to_string()),
+        },
+        IdlError {
+            code: 101,
+            name: "Overflow".to_string(),
+            msg: None,
+        },
     ];
     let files = generate_client(&parsed);
     let code = all_content(&files);
@@ -1739,24 +1754,28 @@ fn rust_codegen_error_enum() {
     assert!(code.contains("Overflow = 101,"), "{code}");
 
     // from_code
-    assert!(code.contains("pub fn from_code(code: u32) -> Option<Self>"), "{code}");
+    assert!(
+        code.contains("pub fn from_code(code: u32) -> Option<Self>"),
+        "{code}"
+    );
     assert!(code.contains("100 => Some(Self::Unauthorized),"), "{code}");
 
     // message — custom message used when provided, variant name as fallback
-    assert!(code.contains("Self::Unauthorized => \"Not authorized\","), "{code}");
+    assert!(
+        code.contains("Self::Unauthorized => \"Not authorized\","),
+        "{code}"
+    );
     assert!(code.contains("Self::Overflow => \"Overflow\","), "{code}");
 }
 
 #[test]
 fn rust_codegen_error_message_escaping() {
     let mut parsed = test_program();
-    parsed.errors = vec![
-        IdlError {
-            code: 200,
-            name: "BadQuote".to_string(),
-            msg: Some("can't use \"this\"".to_string()),
-        },
-    ];
+    parsed.errors = vec![IdlError {
+        code: 200,
+        name: "BadQuote".to_string(),
+        msg: Some("can't use \"this\"".to_string()),
+    }];
     let files = generate_client(&parsed);
     let code = all_content(&files);
 
@@ -1892,12 +1911,29 @@ fn rust_codegen_decode_instruction_no_args() {
         has_remaining: false,
     });
     let files = generate_client(&parsed);
-    let ix_mod = files.iter().find(|(p, _)| p == "instructions/mod.rs").unwrap();
+    let ix_mod = files
+        .iter()
+        .find(|(p, _)| p == "instructions/mod.rs")
+        .unwrap();
 
-    assert!(ix_mod.1.contains("pub enum ProgramInstruction {"), "{}", ix_mod.1);
+    assert!(
+        ix_mod.1.contains("pub enum ProgramInstruction {"),
+        "{}",
+        ix_mod.1
+    );
     assert!(ix_mod.1.contains("Initialize,"), "{}", ix_mod.1);
-    assert!(ix_mod.1.contains("pub fn decode_instruction(data: &[u8]) -> Option<ProgramInstruction>"), "{}", ix_mod.1);
-    assert!(ix_mod.1.contains("Some(ProgramInstruction::Initialize),"), "{}", ix_mod.1);
+    assert!(
+        ix_mod
+            .1
+            .contains("pub fn decode_instruction(data: &[u8]) -> Option<ProgramInstruction>"),
+        "{}",
+        ix_mod.1
+    );
+    assert!(
+        ix_mod.1.contains("Some(ProgramInstruction::Initialize),"),
+        "{}",
+        ix_mod.1
+    );
 }
 
 #[test]
@@ -1911,11 +1947,22 @@ fn rust_codegen_decode_instruction_single_arg() {
         has_remaining: false,
     });
     let files = generate_client(&parsed);
-    let ix_mod = files.iter().find(|(p, _)| p == "instructions/mod.rs").unwrap();
+    let ix_mod = files
+        .iter()
+        .find(|(p, _)| p == "instructions/mod.rs")
+        .unwrap();
 
     // Single arg: no offset tracking, deserialize directly from payload
-    assert!(ix_mod.1.contains("wincode::deserialize(payload).ok()?"), "{}", ix_mod.1);
-    assert!(!ix_mod.1.contains("let mut offset"), "single-arg must not use offset: {}", ix_mod.1);
+    assert!(
+        ix_mod.1.contains("wincode::deserialize(payload).ok()?"),
+        "{}",
+        ix_mod.1
+    );
+    assert!(
+        !ix_mod.1.contains("let mut offset"),
+        "single-arg must not use offset: {}",
+        ix_mod.1
+    );
 }
 
 #[test]
@@ -1932,13 +1979,30 @@ fn rust_codegen_decode_instruction_multi_arg() {
         has_remaining: false,
     });
     let files = generate_client(&parsed);
-    let ix_mod = files.iter().find(|(p, _)| p == "instructions/mod.rs").unwrap();
+    let ix_mod = files
+        .iter()
+        .find(|(p, _)| p == "instructions/mod.rs")
+        .unwrap();
 
     // Multi-arg: uses offset tracking
-    assert!(ix_mod.1.contains("let mut offset = 0usize;"), "{}", ix_mod.1);
-    assert!(ix_mod.1.contains("wincode::serialized_size(&deposit).ok()? as usize"), "{}", ix_mod.1);
+    assert!(
+        ix_mod.1.contains("let mut offset = 0usize;"),
+        "{}",
+        ix_mod.1
+    );
+    assert!(
+        ix_mod
+            .1
+            .contains("wincode::serialized_size(&deposit).ok()? as usize"),
+        "{}",
+        ix_mod.1
+    );
     // Last arg does NOT increment offset
-    assert!(!ix_mod.1.contains("wincode::serialized_size(&receive)"), "last arg must not increment offset: {}", ix_mod.1);
+    assert!(
+        !ix_mod.1.contains("wincode::serialized_size(&receive)"),
+        "last arg must not increment offset: {}",
+        ix_mod.1
+    );
 }
 
 // ===========================================================================
@@ -1971,9 +2035,11 @@ fn rust_codegen_lib_rs_modules() {
         }
         "#,
     ));
-    parsed.errors = vec![
-        IdlError { code: 100, name: "Unauthorized".to_string(), msg: None },
-    ];
+    parsed.errors = vec![IdlError {
+        code: 100,
+        name: "Unauthorized".to_string(),
+        msg: None,
+    }];
     let files = generate_client(&parsed);
     let lib_rs = files.iter().find(|(p, _)| p == "lib.rs").unwrap();
 

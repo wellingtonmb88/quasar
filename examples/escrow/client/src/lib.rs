@@ -2,12 +2,9 @@ use solana_address::Address;
 
 pub const ID: Address = solana_address::address!("22222222222222222222222222222222222222222222");
 
-pub mod instructions;
-pub mod state;
 pub mod events;
+pub mod instructions;
 pub mod pda;
+pub mod state;
 
-pub use instructions::*;
-pub use state::*;
-pub use events::*;
-pub use pda::*;
+pub use {events::*, instructions::*, pda::*, state::*};

@@ -1,13 +1,10 @@
-use quasar_lang::client::{DynBytes};
+use quasar_lang::client::DynBytes;
 pub mod create;
 pub mod deposit;
-pub mod set_label;
 pub mod execute_transfer;
+pub mod set_label;
 
-pub use create::*;
-pub use deposit::*;
-pub use set_label::*;
-pub use execute_transfer::*;
+pub use {create::*, deposit::*, execute_transfer::*, set_label::*};
 
 pub enum ProgramInstruction {
     Create { threshold: u8 },

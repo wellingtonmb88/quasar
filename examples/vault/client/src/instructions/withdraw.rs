@@ -1,6 +1,8 @@
-use solana_address::Address;
-use solana_instruction::{AccountMeta, Instruction};
-use crate::ID;
+use {
+    crate::ID,
+    solana_address::Address,
+    solana_instruction::{AccountMeta, Instruction},
+};
 
 pub struct WithdrawInstruction {
     pub user: Address,

@@ -1,7 +1,7 @@
 extern crate std;
 use {
-    quasar_vault_client::*,
     quasar_svm::{Account, Instruction, Pubkey, QuasarSvm},
+    quasar_vault_client::*,
     std::{println, vec},
 };
 

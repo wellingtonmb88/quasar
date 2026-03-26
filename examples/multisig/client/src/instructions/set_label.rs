@@ -1,7 +1,9 @@
-use solana_address::Address;
-use solana_instruction::{AccountMeta, Instruction};
-use crate::ID;
-use quasar_lang::client::{DynBytes};
+use {
+    crate::ID,
+    quasar_lang::client::DynBytes,
+    solana_address::Address,
+    solana_instruction::{AccountMeta, Instruction},
+};
 
 pub struct SetLabelInstruction {
     pub creator: Address,

@@ -1,10 +1,14 @@
-use wincode::{SchemaWrite, SchemaRead};
-use wincode::config::ConfigCore;
-use wincode::error::{ReadError, ReadResult, WriteResult};
-use wincode::io::{Reader, Writer};
-use std::mem::MaybeUninit;
-use solana_address::Address;
-use quasar_lang::client::{DynBytes, DynVec};
+use {
+    quasar_lang::client::{DynBytes, DynVec},
+    solana_address::Address,
+    std::mem::MaybeUninit,
+    wincode::{
+        config::ConfigCore,
+        error::{ReadError, ReadResult, WriteResult},
+        io::{Reader, Writer},
+        SchemaRead, SchemaWrite,
+    },
+};
 
 pub const MULTISIG_CONFIG_ACCOUNT_DISCRIMINATOR: &[u8] = &[1];
 
@@ -27,8 +31,7 @@ where
     type Src = Self;
 
     fn size_of(src: &Self) -> WriteResult<usize> {
-        Ok(1
-            + <Address as SchemaWrite<C>>::size_of(&src.creator)?
+        Ok(1 + <Address as SchemaWrite<C>>::size_of(&src.creator)?
             + <u8 as SchemaWrite<C>>::size_of(&src.threshold)?
             + <u8 as SchemaWrite<C>>::size_of(&src.bump)?
             + <DynBytes as SchemaWrite<C>>::size_of(&src.label)?
@@ -70,4 +73,3 @@ where
         Ok(())
     }
 }
-

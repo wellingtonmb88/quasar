@@ -1,7 +1,9 @@
-use std::vec::Vec;
-use solana_address::Address;
-use solana_instruction::{AccountMeta, Instruction};
-use crate::ID;
+use {
+    crate::ID,
+    solana_address::Address,
+    solana_instruction::{AccountMeta, Instruction},
+    std::vec::Vec,
+};
 
 pub struct CreateInstruction {
     pub creator: Address,
