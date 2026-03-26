@@ -13,13 +13,13 @@ pub enum ProgramEvent {
 }
 
 pub fn decode_event(data: &[u8]) -> Option<ProgramEvent> {
-    if data.starts_with(MAKE_EVENT_EVENT_DISCRIMINATOR) {
+    if data.starts_with(MAKE_EVENT_DISCRIMINATOR) {
         return wincode::deserialize::<MakeEvent>(data).ok().map(ProgramEvent::MakeEvent);
     }
-    if data.starts_with(TAKE_EVENT_EVENT_DISCRIMINATOR) {
+    if data.starts_with(TAKE_EVENT_DISCRIMINATOR) {
         return wincode::deserialize::<TakeEvent>(data).ok().map(ProgramEvent::TakeEvent);
     }
-    if data.starts_with(REFUND_EVENT_EVENT_DISCRIMINATOR) {
+    if data.starts_with(REFUND_EVENT_DISCRIMINATOR) {
         return wincode::deserialize::<RefundEvent>(data).ok().map(ProgramEvent::RefundEvent);
     }
     None

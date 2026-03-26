@@ -31,13 +31,10 @@ solana-instruction = "3"
     )
 }
 
-/// Check whether the parsed program has any PDA annotations.
+/// Check whether the parsed program has any resolvable PDA annotations.
 /// Used by the CLI to decide whether `generate_cargo_toml` needs PDA deps.
 pub fn has_pdas(parsed: &ParsedProgram) -> bool {
-    parsed
-        .accounts_structs
-        .iter()
-        .any(|acc| acc.fields.iter().any(|f| f.pda.is_some()))
+    !collect_pdas(parsed).is_empty()
 }
 
 /// Generate a standalone Rust client crate from parsed program data.
@@ -347,9 +344,7 @@ fn emit_single_instruction(
 
     // --- Per-file imports ---
     if ix.has_remaining {
-        out.push_str("use std::vec;\nuse std::vec::Vec;\n");
-    } else {
-        out.push_str("use std::vec;\n");
+        out.push_str("use std::vec::Vec;\n");
     }
 
     out.push_str("use solana_address::Address;\n");
@@ -637,7 +632,8 @@ fn emit_events(
 
     // Discriminator constants for fieldless events (in mod.rs)
     for ev in &events_without_fields {
-        let const_name = pascal_to_screaming_snake(&ev.name);
+        let base = ev.name.strip_suffix("Event").unwrap_or(&ev.name);
+        let const_name = pascal_to_screaming_snake(base);
         let disc_str = format_disc_list(&ev.discriminator);
         writeln!(
             mod_rs,
@@ -664,7 +660,8 @@ fn emit_events(
     // decode_event function
     mod_rs.push_str("pub fn decode_event(data: &[u8]) -> Option<ProgramEvent> {\n");
     for ev in &parsed.events {
-        let const_name = pascal_to_screaming_snake(&ev.name);
+        let base = ev.name.strip_suffix("Event").unwrap_or(&ev.name);
+        let const_name = pascal_to_screaming_snake(base);
         writeln!(
             mod_rs,
             "    if data.starts_with({}_EVENT_DISCRIMINATOR) {{",
@@ -730,8 +727,10 @@ fn emit_single_event(
 
     out.push('\n');
 
-    // Discriminator constant
-    let const_name = pascal_to_screaming_snake(&ev.name);
+    // Discriminator constant — strip trailing "Event" to avoid stutter
+    // (e.g. MakeEvent → MAKE_EVENT_DISCRIMINATOR, not MAKE_EVENT_EVENT_DISCRIMINATOR)
+    let base_name = ev.name.strip_suffix("Event").unwrap_or(&ev.name);
+    let const_name = pascal_to_screaming_snake(base_name);
     let disc_str = format_disc_list(&ev.discriminator);
     writeln!(
         out,
@@ -860,7 +859,8 @@ fn emit_errors(parsed: &ParsedProgram) -> String {
     out.push_str("        match self {\n");
     for err in &parsed.errors {
         let msg = err.msg.as_deref().unwrap_or(&err.name);
-        writeln!(out, "            Self::{} => \"{}\",", err.name, msg)
+        let escaped = msg.replace('\\', "\\\\").replace('"', "\\\"");
+        writeln!(out, "            Self::{} => \"{}\",", err.name, escaped)
             .expect("write to String");
     }
     out.push_str("        }\n");
@@ -1096,7 +1096,13 @@ fn emit_manual_impls(
         types
     };
 
-    let const_name = pascal_to_screaming_snake(name);
+    // Strip trailing kind suffix to avoid stutter (e.g. MakeEvent + EVENT → MAKE_EVENT, not MAKE_EVENT_EVENT)
+    let base_name = if kind == "event" {
+        name.strip_suffix("Event").unwrap_or(name)
+    } else {
+        name
+    };
+    let const_name = pascal_to_screaming_snake(base_name);
     let disc_const = format!(
         "{}_{}_DISCRIMINATOR",
         const_name,

@@ -596,8 +596,12 @@ fn collision_three_instructions_pairwise() {
 // ===========================================================================
 
 use quasar_idl::{
-    codegen::rust::generate_client,
-    parser::{accounts::RawAccountField, ParsedProgram},
+    codegen::rust::{generate_cargo_toml, generate_client},
+    parser::{
+        accounts::{RawAccountField, RawAccountsStruct, RawPda, RawSeed},
+        ParsedProgram,
+    },
+    types::IdlError,
 };
 
 fn test_program() -> ParsedProgram {
@@ -1712,4 +1716,353 @@ fn extract_instruction_ctx_with_remaining() {
     assert_eq!(instructions.len(), 2);
     assert!(instructions[0].has_remaining);
     assert!(!instructions[1].has_remaining);
+}
+
+// ===========================================================================
+// V2 codegen: error enum
+// ===========================================================================
+
+#[test]
+fn rust_codegen_error_enum() {
+    let mut parsed = test_program();
+    parsed.errors = vec![
+        IdlError { code: 100, name: "Unauthorized".to_string(), msg: Some("Not authorized".to_string()) },
+        IdlError { code: 101, name: "Overflow".to_string(), msg: None },
+    ];
+    let files = generate_client(&parsed);
+    let code = all_content(&files);
+
+    // Error enum with repr(u32)
+    assert!(code.contains("#[repr(u32)]"), "{code}");
+    assert!(code.contains("pub enum TestProgramError {"), "{code}");
+    assert!(code.contains("Unauthorized = 100,"), "{code}");
+    assert!(code.contains("Overflow = 101,"), "{code}");
+
+    // from_code
+    assert!(code.contains("pub fn from_code(code: u32) -> Option<Self>"), "{code}");
+    assert!(code.contains("100 => Some(Self::Unauthorized),"), "{code}");
+
+    // message — custom message used when provided, variant name as fallback
+    assert!(code.contains("Self::Unauthorized => \"Not authorized\","), "{code}");
+    assert!(code.contains("Self::Overflow => \"Overflow\","), "{code}");
+}
+
+#[test]
+fn rust_codegen_error_message_escaping() {
+    let mut parsed = test_program();
+    parsed.errors = vec![
+        IdlError {
+            code: 200,
+            name: "BadQuote".to_string(),
+            msg: Some("can't use \"this\"".to_string()),
+        },
+    ];
+    let files = generate_client(&parsed);
+    let code = all_content(&files);
+
+    // Quotes and backslashes must be escaped in the generated string literal
+    assert!(
+        code.contains(r#"Self::BadQuote => "can't use \"this\""#),
+        "error message must escape double quotes: {code}"
+    );
+}
+
+// ===========================================================================
+// V2 codegen: PDA helpers
+// ===========================================================================
+
+#[test]
+fn rust_codegen_pda_helpers() {
+    let mut parsed = test_program();
+    parsed.accounts_structs = vec![RawAccountsStruct {
+        name: "Deposit".to_string(),
+        fields: vec![
+            RawAccountField {
+                name: "vault".to_string(),
+                writable: true,
+                signer: false,
+                pda: Some(RawPda {
+                    seeds: vec![
+                        RawSeed::ByteString(b"vault".to_vec()),
+                        RawSeed::AccountRef("user".to_string()),
+                    ],
+                }),
+                address: None,
+            },
+            RawAccountField {
+                name: "user".to_string(),
+                writable: false,
+                signer: true,
+                pda: None,
+                address: None,
+            },
+        ],
+    }];
+    let files = generate_client(&parsed);
+    let code = all_content(&files);
+
+    // pda.rs must be generated with find_ helper
+    assert!(code.contains("pub fn find_vault_address("), "{code}");
+    assert!(code.contains("Address::find_program_address"), "{code}");
+    assert!(code.contains(r#"b"vault""#), "{code}");
+    assert!(code.contains("user.as_ref()"), "{code}");
+
+    // lib.rs must declare the pda module
+    let lib_rs = files.iter().find(|(p, _)| p == "lib.rs").unwrap();
+    assert!(lib_rs.1.contains("pub mod pda;"), "{}", lib_rs.1);
+}
+
+#[test]
+fn rust_codegen_pda_dedup() {
+    // Two accounts structs with the same PDA seeds should produce only one helper
+    let mut parsed = test_program();
+    let pda = Some(RawPda {
+        seeds: vec![
+            RawSeed::ByteString(b"vault".to_vec()),
+            RawSeed::AccountRef("user".to_string()),
+        ],
+    });
+    parsed.accounts_structs = vec![
+        RawAccountsStruct {
+            name: "Deposit".to_string(),
+            fields: vec![RawAccountField {
+                name: "vault".to_string(),
+                writable: true,
+                signer: false,
+                pda: pda.clone(),
+                address: None,
+            }],
+        },
+        RawAccountsStruct {
+            name: "Withdraw".to_string(),
+            fields: vec![RawAccountField {
+                name: "vault".to_string(),
+                writable: true,
+                signer: false,
+                pda,
+                address: None,
+            }],
+        },
+    ];
+    let files = generate_client(&parsed);
+    let code = all_content(&files);
+
+    // Only one find_ function despite two accounts with the same seeds
+    assert_eq!(
+        code.matches("pub fn find_vault_address(").count(),
+        1,
+        "duplicate PDA seeds must be deduplicated: {code}"
+    );
+}
+
+// ===========================================================================
+// V2 codegen: Cargo.toml with PDAs
+// ===========================================================================
+
+#[test]
+fn rust_codegen_cargo_toml_with_pdas() {
+    let toml = generate_cargo_toml("my-program", "0.1.0", true);
+    assert!(
+        toml.contains(r#"features = ["curve25519"]"#),
+        "PDA programs need curve25519 feature: {toml}"
+    );
+}
+
+#[test]
+fn rust_codegen_cargo_toml_without_pdas() {
+    let toml = generate_cargo_toml("my-program", "0.1.0", false);
+    assert!(
+        !toml.contains("curve25519"),
+        "non-PDA programs must not pull in curve25519: {toml}"
+    );
+}
+
+// ===========================================================================
+// V2 codegen: decode_instruction
+// ===========================================================================
+
+#[test]
+fn rust_codegen_decode_instruction_no_args() {
+    let mut parsed = test_program();
+    parsed.instructions.push(program::RawInstruction {
+        name: "initialize".to_string(),
+        discriminator: vec![0],
+        accounts_type_name: "Initialize".to_string(),
+        args: vec![],
+        has_remaining: false,
+    });
+    let files = generate_client(&parsed);
+    let ix_mod = files.iter().find(|(p, _)| p == "instructions/mod.rs").unwrap();
+
+    assert!(ix_mod.1.contains("pub enum ProgramInstruction {"), "{}", ix_mod.1);
+    assert!(ix_mod.1.contains("Initialize,"), "{}", ix_mod.1);
+    assert!(ix_mod.1.contains("pub fn decode_instruction(data: &[u8]) -> Option<ProgramInstruction>"), "{}", ix_mod.1);
+    assert!(ix_mod.1.contains("Some(ProgramInstruction::Initialize),"), "{}", ix_mod.1);
+}
+
+#[test]
+fn rust_codegen_decode_instruction_single_arg() {
+    let mut parsed = test_program();
+    parsed.instructions.push(program::RawInstruction {
+        name: "deposit".to_string(),
+        discriminator: vec![0],
+        accounts_type_name: "Deposit".to_string(),
+        args: vec![("amount".to_string(), syn::parse_str("u64").unwrap())],
+        has_remaining: false,
+    });
+    let files = generate_client(&parsed);
+    let ix_mod = files.iter().find(|(p, _)| p == "instructions/mod.rs").unwrap();
+
+    // Single arg: no offset tracking, deserialize directly from payload
+    assert!(ix_mod.1.contains("wincode::deserialize(payload).ok()?"), "{}", ix_mod.1);
+    assert!(!ix_mod.1.contains("let mut offset"), "single-arg must not use offset: {}", ix_mod.1);
+}
+
+#[test]
+fn rust_codegen_decode_instruction_multi_arg() {
+    let mut parsed = test_program();
+    parsed.instructions.push(program::RawInstruction {
+        name: "make".to_string(),
+        discriminator: vec![0],
+        accounts_type_name: "Make".to_string(),
+        args: vec![
+            ("deposit".to_string(), syn::parse_str("u64").unwrap()),
+            ("receive".to_string(), syn::parse_str("u64").unwrap()),
+        ],
+        has_remaining: false,
+    });
+    let files = generate_client(&parsed);
+    let ix_mod = files.iter().find(|(p, _)| p == "instructions/mod.rs").unwrap();
+
+    // Multi-arg: uses offset tracking
+    assert!(ix_mod.1.contains("let mut offset = 0usize;"), "{}", ix_mod.1);
+    assert!(ix_mod.1.contains("wincode::serialized_size(&deposit).ok()? as usize"), "{}", ix_mod.1);
+    // Last arg does NOT increment offset
+    assert!(!ix_mod.1.contains("wincode::serialized_size(&receive)"), "last arg must not increment offset: {}", ix_mod.1);
+}
+
+// ===========================================================================
+// V2 codegen: lib.rs module declarations
+// ===========================================================================
+
+#[test]
+fn rust_codegen_lib_rs_modules() {
+    let mut parsed = test_program();
+    parsed.instructions.push(program::RawInstruction {
+        name: "deposit".to_string(),
+        discriminator: vec![0],
+        accounts_type_name: "Deposit".to_string(),
+        args: vec![],
+        has_remaining: false,
+    });
+    parsed.state_accounts = state::extract_state_accounts(&parse_file(
+        r#"
+        #[account(discriminator = [1])]
+        pub struct Vault {
+            pub amount: u64,
+        }
+        "#,
+    ));
+    parsed.events = events::extract_events(&parse_file(
+        r#"
+        #[event(discriminator = [10])]
+        pub struct Transfer {
+            pub amount: u64,
+        }
+        "#,
+    ));
+    parsed.errors = vec![
+        IdlError { code: 100, name: "Unauthorized".to_string(), msg: None },
+    ];
+    let files = generate_client(&parsed);
+    let lib_rs = files.iter().find(|(p, _)| p == "lib.rs").unwrap();
+
+    assert!(lib_rs.1.contains("pub mod instructions;"), "{}", lib_rs.1);
+    assert!(lib_rs.1.contains("pub mod state;"), "{}", lib_rs.1);
+    assert!(lib_rs.1.contains("pub mod events;"), "{}", lib_rs.1);
+    assert!(lib_rs.1.contains("pub mod errors;"), "{}", lib_rs.1);
+}
+
+#[test]
+fn rust_codegen_lib_rs_omits_empty_modules() {
+    // Empty program: no instructions, state, events, or errors
+    let parsed = test_program();
+    let files = generate_client(&parsed);
+    let lib_rs = files.iter().find(|(p, _)| p == "lib.rs").unwrap();
+
+    assert!(!lib_rs.1.contains("pub mod instructions;"), "{}", lib_rs.1);
+    assert!(!lib_rs.1.contains("pub mod state;"), "{}", lib_rs.1);
+    assert!(!lib_rs.1.contains("pub mod events;"), "{}", lib_rs.1);
+    assert!(!lib_rs.1.contains("pub mod errors;"), "{}", lib_rs.1);
+    assert!(!lib_rs.1.contains("pub mod pda;"), "{}", lib_rs.1);
+}
+
+// ===========================================================================
+// V2 codegen: file path correctness
+// ===========================================================================
+
+#[test]
+fn rust_codegen_file_paths() {
+    let mut parsed = test_program();
+    parsed.instructions.push(program::RawInstruction {
+        name: "deposit".to_string(),
+        discriminator: vec![0],
+        accounts_type_name: "Deposit".to_string(),
+        args: vec![("amount".to_string(), syn::parse_str("u64").unwrap())],
+        has_remaining: false,
+    });
+    parsed.state_accounts = state::extract_state_accounts(&parse_file(
+        r#"
+        #[account(discriminator = [1])]
+        pub struct Vault {
+            pub amount: u64,
+        }
+        "#,
+    ));
+    let files = generate_client(&parsed);
+    let paths: Vec<&str> = files.iter().map(|(p, _)| p.as_str()).collect();
+
+    assert!(paths.contains(&"lib.rs"), "{paths:?}");
+    assert!(paths.contains(&"instructions/mod.rs"), "{paths:?}");
+    assert!(paths.contains(&"instructions/deposit.rs"), "{paths:?}");
+    assert!(paths.contains(&"state/mod.rs"), "{paths:?}");
+    assert!(paths.contains(&"state/vault.rs"), "{paths:?}");
+}
+
+// ===========================================================================
+// V2 codegen: event discriminator constant naming (no stutter)
+// ===========================================================================
+
+#[test]
+fn rust_codegen_event_discriminator_no_stutter() {
+    let mut parsed = test_program();
+    parsed.events = events::extract_events(&parse_file(
+        r#"
+        #[event(discriminator = [10])]
+        pub struct MakeEvent {
+            pub amount: u64,
+        }
+
+        #[event(discriminator = 5)]
+        pub struct OrderCancelled {}
+        "#,
+    ));
+    let files = generate_client(&parsed);
+    let code = all_content(&files);
+
+    // MakeEvent → MAKE_EVENT_DISCRIMINATOR (not MAKE_EVENT_EVENT_DISCRIMINATOR)
+    assert!(
+        code.contains("MAKE_EVENT_DISCRIMINATOR"),
+        "event const should not stutter: {code}"
+    );
+    assert!(
+        !code.contains("MAKE_EVENT_EVENT_DISCRIMINATOR"),
+        "event const must not stutter EVENT_EVENT: {code}"
+    );
+
+    // OrderCancelled (no Event suffix) → ORDER_CANCELLED_EVENT_DISCRIMINATOR
+    assert!(
+        code.contains("ORDER_CANCELLED_EVENT_DISCRIMINATOR"),
+        "{code}"
+    );
 }

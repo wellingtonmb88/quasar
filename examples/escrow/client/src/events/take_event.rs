@@ -5,7 +5,7 @@ use wincode::io::{Reader, Writer};
 use std::mem::MaybeUninit;
 use solana_address::Address;
 
-pub const TAKE_EVENT_EVENT_DISCRIMINATOR: &[u8] = &[1];
+pub const TAKE_EVENT_DISCRIMINATOR: &[u8] = &[1];
 
 #[derive(Clone, Copy)]
 pub struct TakeEvent {
@@ -24,7 +24,7 @@ where
     }
 
     fn write(mut writer: impl Writer, src: &Self) -> WriteResult<()> {
-        writer.write(TAKE_EVENT_EVENT_DISCRIMINATOR)?;
+        writer.write(TAKE_EVENT_DISCRIMINATOR)?;
         <Address as SchemaWrite<C>>::write(writer.by_ref(), &src.escrow)?;
         Ok(())
     }

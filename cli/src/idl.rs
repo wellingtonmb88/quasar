@@ -94,9 +94,14 @@ pub fn generate(crate_path: &Path, languages: &[&str]) -> CliResult {
             .join("rust")
             .join(format!("{}-client", crate_name));
 
+        std::fs::create_dir_all(&client_dir)?;
         std::fs::write(client_dir.join("Cargo.toml"), &cargo_toml)?;
 
+        // Remove stale src/ from previous runs before writing new files
         let src_dir = client_dir.join("src");
+        if src_dir.exists() {
+            std::fs::remove_dir_all(&src_dir)?;
+        }
         for (path, content) in &files {
             let file_path = src_dir.join(path);
             if let Some(parent) = file_path.parent() {
