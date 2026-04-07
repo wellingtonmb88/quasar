@@ -33,22 +33,16 @@ pub fn run(
         std::process::exit(1);
     });
 
-    // Find the program keypair
+    // Find the program keypair (check local and workspace target dirs)
     let keypair_path = program_keypair.unwrap_or_else(|| {
-        let default = PathBuf::from("target")
-            .join("deploy")
-            .join(format!("{}-keypair.json", name));
-        if !default.exists() {
-            // Try module name (underscores)
-            let module = config.module_name();
-            let alt = PathBuf::from("target")
-                .join("deploy")
-                .join(format!("{module}-keypair.json"));
-            if alt.exists() {
-                return alt;
-            }
-        }
-        default
+        let module = config.module_name();
+        utils::find_in_deploy(&format!("{name}-keypair.json"))
+            .or_else(|| utils::find_in_deploy(&format!("{module}-keypair.json")))
+            .unwrap_or_else(|| {
+                PathBuf::from("target")
+                    .join("deploy")
+                    .join(format!("{name}-keypair.json"))
+            })
     });
 
     if !keypair_path.exists() {

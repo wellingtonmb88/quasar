@@ -21,7 +21,8 @@ fn run_once(debug: bool, features: Option<&str>) -> CliResult {
     let start = Instant::now();
 
     let languages = config.client_languages();
-    crate::idl::generate(Path::new("."), &languages)?;
+    let crate_root = utils::find_program_crate(&config);
+    crate::idl::generate(&crate_root, &languages)?;
 
     let sp = style::spinner("Building...");
 
@@ -145,7 +146,8 @@ pub fn profile_build() -> Result<PathBuf, crate::error::CliError> {
     let start = Instant::now();
 
     let languages = config.client_languages();
-    crate::idl::generate(Path::new("."), &languages)?;
+    let crate_root = utils::find_program_crate(&config);
+    crate::idl::generate(&crate_root, &languages)?;
 
     let sp = style::spinner("Profile build...");
 
