@@ -1,5 +1,6 @@
 //! Account relationship linter for Quasar programs.
 
+pub mod constraints;
 pub mod cross;
 pub mod fix;
 pub mod graph;
