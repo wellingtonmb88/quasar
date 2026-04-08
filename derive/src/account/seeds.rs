@@ -9,6 +9,7 @@ use {
 };
 
 /// A single dynamic seed in the #[seeds] definition.
+#[allow(dead_code)] // Fields used for future type validation
 pub struct SeedDef {
     pub name: Ident,
     pub ty: Type,
