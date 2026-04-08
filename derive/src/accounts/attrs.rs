@@ -133,6 +133,12 @@ impl Parse for AccountDirective {
                                 // Build type path: all segments except the last "seeds"
                                 let all: Vec<syn::PathSegment> =
                                     segments.iter().cloned().collect();
+                                if all.len() < 2 {
+                                    return Err(syn::Error::new_spanned(
+                                        &func_path.path,
+                                        "expected Type::seeds(...), not just seeds(...)",
+                                    ));
+                                }
                                 let type_segs = &all[..all.len() - 1];
                                 let mut type_segments = syn::punctuated::Punctuated::new();
                                 for (i, seg) in type_segs.iter().enumerate() {
