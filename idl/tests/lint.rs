@@ -1,4 +1,5 @@
 use quasar_idl::lint;
+use quasar_idl::lint::graph::AccountGraph;
 use quasar_idl::parser;
 
 #[test]
@@ -87,4 +88,34 @@ fn parses_has_one_constraints() {
 
     assert_eq!(proposal_field.constraints.has_ones, vec!["wallet", "intent"]);
     assert!(proposal_field.constraints.is_mut);
+}
+
+#[test]
+fn graph_has_correct_edges_for_has_one() {
+    let src = r#"
+        declare_id!("11111111111111111111111111111111");
+        #[program]
+        mod test_program {
+            use super::*;
+            #[instruction(discriminator = [1])]
+            pub fn approve(ctx: Ctx<Approve>) -> Result<(), ProgramError> { Ok(()) }
+        }
+        #[derive(Accounts)]
+        pub struct Approve<'info> {
+            pub authority: Signer,
+            pub wallet: Account<Wallet<'info>>,
+            #[account(mut, has_one = wallet)]
+            pub proposal: Account<Proposal<'info>>,
+        }
+        #[account(discriminator = 1)]
+        pub struct Proposal { pub wallet: Address }
+        #[account(discriminator = 2)]
+        pub struct Wallet { pub bump: u8 }
+    "#;
+    let parsed = quasar_idl::parser::parse_program_from_source(src);
+    let registry = quasar_idl::lint::types::TypeRegistry::from_parsed(&parsed);
+    let graph = AccountGraph::build(&parsed.accounts_structs[0], &registry);
+
+    assert_eq!(graph.nodes.len(), 3);
+    assert!(graph.has_edge("proposal", "wallet"));
 }
