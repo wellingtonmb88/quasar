@@ -9,5 +9,5 @@ workspace = true
 [dependencies]
 quasar-lang = { path = "../../../lang" }
 wincode = { version = "0.4", features = ["derive"] }
-solana-address = "2"
+solana-address = "2.2"
 solana-instruction = "3"

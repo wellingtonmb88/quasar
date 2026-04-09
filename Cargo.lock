@@ -2008,7 +2008,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c06810dac15a4ef83d3dabdb4f2f22fb39c9adff669cd2781da4f716510a647c"
 dependencies = [
  "solana-account-view 1.0.0",
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-define-syscall 4.0.1",
  "solana-instruction-view 1.0.0",
  "solana-program-error",
@@ -2021,7 +2021,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "24044a0815753862b558e179e78f03f7344cb755de48617a09d7d23b50883b6c"
 dependencies = [
  "pinocchio",
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
 ]
 
 [[package]]
@@ -2032,7 +2032,7 @@ dependencies = [
  "pinocchio",
  "pinocchio-system",
  "solana-account",
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-instruction",
 ]
 
@@ -2158,7 +2158,7 @@ dependencies = [
  "quasar-lang",
  "quasar-spl",
  "quasar-svm",
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-instruction",
  "solana-program-pack",
  "spl-token-interface",
@@ -2170,7 +2170,7 @@ name = "quasar-escrow-client"
 version = "0.1.0"
 dependencies = [
  "quasar-lang",
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-instruction",
  "wincode 0.4.9",
 ]
@@ -2195,7 +2195,7 @@ dependencies = [
  "quasar-pod",
  "quasar-spl",
  "solana-account-view 2.0.0",
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-define-syscall 5.0.0",
  "solana-instruction",
  "solana-instruction-view 2.1.0",
@@ -2212,7 +2212,7 @@ dependencies = [
  "quasar-lang",
  "quasar-multisig-client",
  "quasar-svm",
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-instruction",
  "wincode 0.4.9",
 ]
@@ -2222,7 +2222,7 @@ name = "quasar-multisig-client"
 version = "0.1.0"
 dependencies = [
  "quasar-lang",
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-instruction",
  "wincode 0.4.9",
 ]
@@ -2257,7 +2257,7 @@ name = "quasar-spl"
 version = "0.0.0"
 dependencies = [
  "quasar-lang",
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-program-error",
 ]
 
@@ -2347,7 +2347,7 @@ dependencies = [
  "quasar-test-token-init",
  "quasar-test-token-validate",
  "solana-account",
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-instruction",
  "solana-program-pack",
  "spl-token-interface",
@@ -2398,7 +2398,7 @@ name = "quasar-vault-client"
 version = "0.1.0"
 dependencies = [
  "quasar-lang",
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-instruction",
  "wincode 0.4.9",
 ]
@@ -2833,7 +2833,7 @@ version = "3.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a9cf16495d9eb53e3d04e72366a33bb1c20c24e78c171d8b8f5978357b63ae95"
 dependencies = [
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-program-error",
  "solana-program-memory",
 ]
@@ -2844,7 +2844,7 @@ version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f37ca34c37f92ee341b73d5ce7c8ef5bb38e9a87955b4bd343c63fa18b149215"
 dependencies = [
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-program-error",
 ]
 
@@ -2854,7 +2854,7 @@ version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc141b940560430425ebaadb7645496c45f6a10fad9911d719bd03eab7f4d422"
 dependencies = [
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-program-error",
 ]
 
@@ -2864,14 +2864,14 @@ version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2ecac8e1b7f74c2baa9e774c42817e3e75b20787134b76cc4d45e8a604488f5"
 dependencies = [
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
 ]
 
 [[package]]
 name = "solana-address"
-version = "2.6.0"
+version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1384b52c435a750cc9c538760fc7bb472fd78e65a9900a2d07312c5bb335b72"
+checksum = "68c5d02824391b072dc5cd0aaa85fb0af9784a21d23286a767994d1e8a322131"
 dependencies = [
  "borsh",
  "bytemuck",
@@ -2887,7 +2887,7 @@ dependencies = [
  "solana-program-error",
  "solana-sanitize",
  "solana-sha256-hasher",
- "wincode 0.5.1",
+ "wincode 0.4.9",
 ]
 
 [[package]]
@@ -3148,7 +3148,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "60147e4d0a4620013df40bf30a86dd299203ff12fcb8b593cd51014fce0875d8"
 dependencies = [
  "solana-account-view 1.0.0",
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-define-syscall 4.0.1",
  "solana-program-error",
 ]
@@ -3160,7 +3160,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ab7a27d0c4214b9f7389c3dd00b68c93093a67f1dcc5b7893aebe299bbcbb47"
 dependencies = [
  "solana-account-view 2.0.0",
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-define-syscall 5.0.0",
  "solana-program-error",
 ]
@@ -3256,7 +3256,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0448b1fd891c5f46491e5dc7d9986385ba3c852c340db2911dd29faa01d2b08d"
 dependencies = [
  "lazy_static",
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-hash 4.3.0",
  "solana-instruction",
  "solana-sanitize",
@@ -3454,7 +3454,7 @@ version = "4.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7db719574990de7e8b0f55a8593ac92a5ccb42c8ce67b3e4bf05b139d5d9ee71"
 dependencies = [
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
 ]
 
 [[package]]
@@ -3499,7 +3499,7 @@ version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "def234c1956ff616d46c9dd953f251fa7096ddbaa6d52b165218de97882b7280"
 dependencies = [
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
 ]
 
 [[package]]
@@ -3758,7 +3758,7 @@ version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17358d1e9a13e5b9c2264d301102126cf11a47fd394cdf3dec174fe7bc96e1de"
 dependencies = [
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-sdk-ids",
 ]
 
@@ -3768,7 +3768,7 @@ version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "96697cff5075a028265324255efed226099f6d761ca67342b230d09f72cc48d2"
 dependencies = [
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-hash 4.3.0",
  "solana-instruction",
  "solana-instruction-error",
@@ -4172,7 +4172,7 @@ version = "0.1.0"
 dependencies = [
  "quasar-lang",
  "quasar-svm",
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "upstream-vault-client",
 ]
 
@@ -4181,7 +4181,7 @@ name = "upstream-vault-client"
 version = "0.1.0"
 dependencies = [
  "quasar-lang",
- "solana-address 2.6.0",
+ "solana-address 2.2.0",
  "solana-instruction",
  "wincode 0.4.9",
 ]
