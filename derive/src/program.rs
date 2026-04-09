@@ -78,6 +78,11 @@ pub(crate) fn program(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut client_items: Vec<proc_macro2::TokenStream> = Vec::new();
     let mut seen_discriminators: Vec<(Vec<u8>, String)> = Vec::new();
     let mut disc_len: Option<usize> = None;
+    let mut heap_flags: Vec<bool> = Vec::new();
+    // Per-instruction data for inline dispatch generation (used when any_heap)
+    let mut arm_disc_tokens: Vec<Vec<proc_macro2::TokenStream>> = Vec::new();
+    let mut arm_fn_names: Vec<Ident> = Vec::new();
+    let mut arm_accounts_types: Vec<proc_macro2::TokenStream> = Vec::new();
 
     for item in items {
         if let Item::Fn(func) = item {
@@ -87,7 +92,17 @@ pub(crate) fn program(_attr: TokenStream, item: TokenStream) -> TokenStream {
                         Ok(a) => a,
                         Err(e) => return e.to_compile_error().into(),
                     };
-                    let disc_bytes = &args.discriminator;
+                    let disc_bytes = match &args.discriminator {
+                        Some(d) => d,
+                        None => {
+                            return syn::Error::new_spanned(
+                                attr,
+                                "#[program]: instruction requires `discriminator = [...]`",
+                            )
+                            .to_compile_error()
+                            .into();
+                        }
+                    };
                     let fn_name = &func.sig.ident;
                     let ctx_kind = match CtxKind::classify(&func.sig) {
                         Ok(k) => k,
@@ -139,6 +154,10 @@ pub(crate) fn program(_attr: TokenStream, item: TokenStream) -> TokenStream {
                     dispatch_arms.push(quote! {
                         [#(#disc_bytes),*] => #fn_name(#accounts_type)
                     });
+                    heap_flags.push(args.heap);
+                    arm_disc_tokens.push(disc_bytes.iter().map(|b| quote!(#b)).collect());
+                    arm_fn_names.push(fn_name.clone());
+                    arm_accounts_types.push(accounts_type.clone());
 
                     // Collect data for client module generation — invoke the macro_rules
                     // bridge emitted by derive(Accounts)
@@ -217,6 +236,8 @@ pub(crate) fn program(_attr: TokenStream, item: TokenStream) -> TokenStream {
         .into();
     }
 
+    let any_heap = heap_flags.iter().any(|&h| h);
+
     // Append dispatch + entrypoint to the module
     if let Some((_, ref mut items)) = module.content {
         items.push(syn::parse_quote! {
@@ -228,7 +249,7 @@ pub(crate) fn program(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 }
                 // SAFETY: Pointer arithmetic follows the SVM input buffer layout. The u64 casts
                 // for address comparison are technically misaligned (Address is align 1), but SBF
-                // handles unaligned access natively — this 4×u64 compare saves ~20 CU vs memcmp.
+                // handles unaligned access natively — this 4x u64 compare saves ~20 CU vs memcmp.
                 unsafe {
                     let raw = ptr.add(core::mem::size_of::<u64>()) as *const quasar_lang::__internal::RuntimeAccount;
 
@@ -256,49 +277,182 @@ pub(crate) fn program(_attr: TokenStream, item: TokenStream) -> TokenStream {
             }
         });
 
-        items.push(syn::parse_quote! {
-            #[inline(always)]
-            fn __dispatch(ptr: *mut u8, instruction_data: &[u8]) -> Result<(), ProgramError> {
-                if !instruction_data.is_empty() && instruction_data[0] == 0xFF {
-                    return __handle_event(ptr, instruction_data);
-                }
-                dispatch!(ptr, instruction_data, #disc_len_lit, {
-                    #(#dispatch_arms),*
+        if any_heap {
+            // When any instruction opts into heap, generate inline dispatch
+            // with per-arm cursor initialization instead of using the dispatch!
+            // macro. Heap endpoints get normal cursor init; non-heap endpoints
+            // set cursor past end of heap (clean alloc trap). Debug builds
+            // exempt non-heap endpoints so alloc::format! works in error paths.
+            let inline_arms: Vec<proc_macro2::TokenStream> = arm_disc_tokens
+                .iter()
+                .zip(arm_fn_names.iter())
+                .zip(arm_accounts_types.iter())
+                .zip(heap_flags.iter())
+                .map(|(((disc_toks, fn_name), accounts_type), &is_heap)| {
+                    let cursor_init = if is_heap {
+                        // Heap endpoint: always init cursor normally
+                        quote! {
+                            #[cfg(feature = "alloc")]
+                            {
+                                unsafe {
+                                    *(0x300000000usize as *mut usize) =
+                                        0x300000000usize + core::mem::size_of::<usize>();
+                                }
+                            }
+                        }
+                    } else {
+                        // Non-heap endpoint: trap on allocation.
+                        // In debug builds, allow allocation for error formatting.
+                        quote! {
+                            #[cfg(feature = "alloc")]
+                            {
+                                #[cfg(feature = "debug")]
+                                unsafe {
+                                    *(0x300000000usize as *mut usize) =
+                                        0x300000000usize + core::mem::size_of::<usize>();
+                                }
+                                #[cfg(not(feature = "debug"))]
+                                unsafe {
+                                    *(0x300000000usize as *mut usize) =
+                                        0x300000000usize + 256 * 1024;
+                                }
+                            }
+                        }
+                    };
+                    // Replicate the dispatch! macro expansion with cursor init
+                    // injected before the handler call.
+                    quote! {
+                        [#(#disc_toks),*] => {
+                            #cursor_init
+                            if (__num_accounts as usize) < <#accounts_type as AccountCount>::COUNT {
+                                return Err(ProgramError::NotEnoughAccountKeys);
+                            }
+                            let mut __buf = core::mem::MaybeUninit::<
+                                [AccountView; <#accounts_type as AccountCount>::COUNT]
+                            >::uninit();
+                            let __remaining_ptr = unsafe {
+                                <#accounts_type>::parse_accounts(
+                                    __accounts_start,
+                                    &mut __buf,
+                                    unsafe { &*(__program_id as *const [u8; 32] as *const Address) },
+                                )?
+                            };
+                            let mut __accounts = unsafe { __buf.assume_init() };
+                            #fn_name(Context {
+                                program_id: __program_id,
+                                accounts: &mut __accounts,
+                                remaining_ptr: __remaining_ptr,
+                                data: instruction_data,
+                                accounts_boundary: unsafe { instruction_data.as_ptr().sub(__U64_SIZE) },
+                            })
+                        }
+                    }
                 })
-            }
-        });
+                .collect();
 
-        items.push(syn::parse_quote! {
-            #[unsafe(no_mangle)]
-            #[cfg(any(target_os = "solana", target_arch = "bpf"))]
-            #[allow(unexpected_cfgs)]
-            pub unsafe extern "C" fn entrypoint(ptr: *mut u8, instruction_data: *const u8) -> u64 {
-                // SAFETY: Initialize bump allocator cursor. The SVM maps and zero-inits the heap
-                // region before execution. This write sets the cursor past the 8-byte cursor slot
-                // itself, eliminating the per-allocation zero-check branch in BumpAllocator::alloc.
-                // Assumes re-entrancy is forbidden by the SVM — cursor reset on re-entry would
-                // alias previous allocations.
-                #[cfg(feature = "alloc")]
-                {
-                    let heap_start = super::allocator::HEAP_START_ADDRESS as usize;
-                    *(heap_start as *mut usize) = heap_start + core::mem::size_of::<usize>();
-                }
+            items.push(syn::parse_quote! {
+                #[inline(always)]
+                fn __dispatch(ptr: *mut u8, instruction_data: &[u8]) -> Result<(), ProgramError> {
+                    if !instruction_data.is_empty() && instruction_data[0] == 0xFF {
+                        return __handle_event(ptr, instruction_data);
+                    }
+                    // Inline dispatch with per-arm heap cursor initialization.
+                    // SAFETY: The SVM appends the 32-byte program ID immediately after
+                    // instruction data in the input buffer.
+                    let __program_id: &[u8; 32] = unsafe {
+                        &*(instruction_data.as_ptr().add(instruction_data.len()) as *const [u8; 32])
+                    };
+                    const __U64_SIZE: usize = core::mem::size_of::<u64>();
+                    // SAFETY: The SVM places the account count (u64) at offset 0.
+                    let __num_accounts = unsafe { *(ptr as *const u64) };
+                    // SAFETY: Skip past the count to reach the first account entry.
+                    let __accounts_start = unsafe { (ptr as *mut u8).add(__U64_SIZE) };
 
-                // SAFETY: SVM places instruction data length as u64 at offset -8 from the data
-                // pointer. The read is technically misaligned in the abstract machine, but the SVM
-                // buffer is 8-byte aligned and SBF handles unaligned access natively.
-                let instruction_data = unsafe {
-                    core::slice::from_raw_parts(
-                        instruction_data,
-                        *(instruction_data.sub(8) as *const u64) as usize,
-                    )
-                };
-                match __dispatch(ptr, instruction_data) {
-                    Ok(_) => 0,
-                    Err(e) => e.into(),
+                    if instruction_data.len() < #disc_len_lit {
+                        return Err(ProgramError::InvalidInstructionData);
+                    }
+                    // SAFETY: Length checked above.
+                    let __disc: [u8; #disc_len_lit] = unsafe {
+                        *(instruction_data.as_ptr() as *const [u8; #disc_len_lit])
+                    };
+                    match __disc {
+                        #(#inline_arms),*
+                        _ => Err(ProgramError::InvalidInstructionData),
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            // No heap annotations — use the dispatch! macro as before
+            items.push(syn::parse_quote! {
+                #[inline(always)]
+                fn __dispatch(ptr: *mut u8, instruction_data: &[u8]) -> Result<(), ProgramError> {
+                    if !instruction_data.is_empty() && instruction_data[0] == 0xFF {
+                        return __handle_event(ptr, instruction_data);
+                    }
+                    dispatch!(ptr, instruction_data, #disc_len_lit, {
+                        #(#dispatch_arms),*
+                    })
+                }
+            });
+        }
+
+        if any_heap {
+            // When per-endpoint heap is used, cursor init is in the dispatch
+            // arms — the entrypoint does NOT init the cursor.
+            items.push(syn::parse_quote! {
+                #[unsafe(no_mangle)]
+                #[cfg(any(target_os = "solana", target_arch = "bpf"))]
+                #[allow(unexpected_cfgs)]
+                pub unsafe extern "C" fn entrypoint(ptr: *mut u8, instruction_data: *const u8) -> u64 {
+                    // SAFETY: SVM places instruction data length as u64 at offset -8 from the data
+                    // pointer. The read is technically misaligned in the abstract machine, but the SVM
+                    // buffer is 8-byte aligned and SBF handles unaligned access natively.
+                    let instruction_data = unsafe {
+                        core::slice::from_raw_parts(
+                            instruction_data,
+                            *(instruction_data.sub(8) as *const u64) as usize,
+                        )
+                    };
+                    match __dispatch(ptr, instruction_data) {
+                        Ok(_) => 0,
+                        Err(e) => e.into(),
+                    }
+                }
+            });
+        } else {
+            // No per-endpoint heap — keep cursor init in entrypoint as before
+            items.push(syn::parse_quote! {
+                #[unsafe(no_mangle)]
+                #[cfg(any(target_os = "solana", target_arch = "bpf"))]
+                #[allow(unexpected_cfgs)]
+                pub unsafe extern "C" fn entrypoint(ptr: *mut u8, instruction_data: *const u8) -> u64 {
+                    // SAFETY: Initialize bump allocator cursor. The SVM maps and zero-inits the heap
+                    // region before execution. This write sets the cursor past the 8-byte cursor slot
+                    // itself, eliminating the per-allocation zero-check branch in BumpAllocator::alloc.
+                    // Assumes re-entrancy is forbidden by the SVM — cursor reset on re-entry would
+                    // alias previous allocations.
+                    #[cfg(feature = "alloc")]
+                    {
+                        let heap_start = super::allocator::HEAP_START_ADDRESS as usize;
+                        *(heap_start as *mut usize) = heap_start + core::mem::size_of::<usize>();
+                    }
+
+                    // SAFETY: SVM places instruction data length as u64 at offset -8 from the data
+                    // pointer. The read is technically misaligned in the abstract machine, but the SVM
+                    // buffer is 8-byte aligned and SBF handles unaligned access natively.
+                    let instruction_data = unsafe {
+                        core::slice::from_raw_parts(
+                            instruction_data,
+                            *(instruction_data.sub(8) as *const u64) as usize,
+                        )
+                    };
+                    match __dispatch(ptr, instruction_data) {
+                        Ok(_) => 0,
+                        Err(e) => e.into(),
+                    }
+                }
+            });
+        }
 
         // Add CPI module inside the program module (instruction builders only —
         // the full client with account/event types is generated by the IDL).

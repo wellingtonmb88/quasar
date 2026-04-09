@@ -14,7 +14,17 @@ use {
 pub(crate) fn instruction(attr: TokenStream, item: TokenStream) -> TokenStream {
     let args = parse_macro_input!(attr as InstructionArgs);
     let mut func = parse_macro_input!(item as ItemFn);
-    let disc_bytes = &args.discriminator;
+    let disc_bytes = match &args.discriminator {
+        Some(d) => d,
+        None => {
+            return syn::Error::new_spanned(
+                &func.sig.ident,
+                "#[instruction] requires `discriminator = [...]`",
+            )
+            .to_compile_error()
+            .into();
+        }
+    };
     let disc_len = disc_bytes.len();
 
     let first_arg = match func.sig.inputs.first() {
