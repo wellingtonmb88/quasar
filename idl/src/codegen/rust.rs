@@ -12,9 +12,9 @@ use {
 /// Generate Cargo.toml content for the standalone client crate.
 pub fn generate_cargo_toml(name: &str, version: &str, has_pdas: bool) -> String {
     let solana_address = if has_pdas {
-        r#"solana-address = { version = "2.2", features = ["curve25519"] }"#
+        r#"solana-address = { version = "2.6", features = ["curve25519"] }"#
     } else {
-        r#"solana-address = "2.2""#
+        r#"solana-address = "2.6""#
     };
     format!(
         r#"[package]
@@ -24,7 +24,7 @@ edition = "2021"
 
 [dependencies]
 quasar-lang = "0.0"
-wincode = {{ version = "0.4", features = ["derive"] }}
+wincode = {{ version = "0.5", features = ["derive"] }}
 {solana_address}
 solana-instruction = "3"
 "#,

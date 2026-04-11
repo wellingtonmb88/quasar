@@ -16,7 +16,7 @@ debug = []
 
 [dependencies]
 quasar-lang = { path = "../../lang" }
-solana-address = { version = "2.2.0" }
+solana-address = { version = "2.6" }
 
 [dev-dependencies]
 upstream-vault-client = { path = "client" }
