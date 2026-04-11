@@ -1,13 +1,13 @@
 use {crate::state::SimpleAccount, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct UpdateHasOne<'info> {
-    pub authority: &'info Signer,
+pub struct UpdateHasOne {
+    pub authority: Signer,
     #[account(has_one = authority, seeds = SimpleAccount::seeds(authority), bump = account.bump)]
-    pub account: &'info Account<SimpleAccount>,
+    pub account: Account<SimpleAccount>,
 }
 
-impl<'info> UpdateHasOne<'info> {
+impl UpdateHasOne {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

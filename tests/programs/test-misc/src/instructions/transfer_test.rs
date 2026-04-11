@@ -1,18 +1,19 @@
 use quasar_lang::prelude::*;
 
 #[derive(Accounts)]
-pub struct TransferTest<'info> {
-    pub from: &'info mut Signer,
+pub struct TransferTest {
     #[account(mut)]
-    pub to: &'info mut UncheckedAccount,
-    pub system_program: &'info Program<System>,
+    pub from: Signer,
+    #[account(mut)]
+    pub to: UncheckedAccount,
+    pub system_program: Program<System>,
 }
 
-impl<'info> TransferTest<'info> {
+impl TransferTest {
     #[inline(always)]
     pub fn handler(&self, amount: u64) -> Result<(), ProgramError> {
         self.system_program
-            .transfer(self.from, self.to, amount)
+            .transfer(&self.from, &self.to, amount)
             .invoke()
     }
 }

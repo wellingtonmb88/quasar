@@ -9,9 +9,9 @@ pub struct Config {
 }
 
 #[derive(Accounts)]
-pub struct Bad<'info> {
+pub struct Bad {
     #[account(seeds = [b"config"], bump = config.bump)]
-    pub config: &'info Account<Config>,
+    pub config: Account<Config>,
 }
 
 fn main() {}

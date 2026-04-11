@@ -4,18 +4,18 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct CloseTokenT22<'info> {
-    pub authority: &'info Signer,
-    #[account(close = destination, token::mint = mint, token::authority = authority)]
-    pub token_account: &'info mut Account<Token2022>,
-    pub mint: &'info Account<Mint2022>,
+pub struct CloseTokenT22 {
+    pub authority: Signer,
+    #[account(mut, close = destination, token::mint = mint, token::authority = authority)]
+    pub token_account: Account<Token2022>,
+    pub mint: Account<Mint2022>,
     /// CHECK: destination may alias authority (close sends lamports to it).
     #[account(mut, dup)]
-    pub destination: &'info mut UncheckedAccount,
-    pub token_program: &'info Program<Token2022>,
+    pub destination: UncheckedAccount,
+    pub token_program: Program<Token2022>,
 }
 
-impl<'info> CloseTokenT22<'info> {
+impl CloseTokenT22 {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

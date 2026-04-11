@@ -1,11 +1,11 @@
 use {crate::events::HeapTestEvent, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct EmitEventOk<'info> {
-    pub signer: &'info Signer,
+pub struct EmitEventOk {
+    pub signer: Signer,
 }
 
-impl<'info> EmitEventOk<'info> {
+impl EmitEventOk {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         emit!(HeapTestEvent { value: 42 });

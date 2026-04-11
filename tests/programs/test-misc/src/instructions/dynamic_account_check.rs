@@ -1,11 +1,11 @@
 use {crate::state::DynamicAccount, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct DynamicAccountCheck<'info> {
-    pub account: Account<DynamicAccount<'info>>,
+pub struct DynamicAccountCheck<'account> {
+    pub account: Account<DynamicAccount<'account>>,
 }
 
-impl<'info> DynamicAccountCheck<'info> {
+impl DynamicAccountCheck<'_> {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

@@ -4,14 +4,15 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct InitNsConfig<'info> {
-    pub payer: &'info mut Signer,
-    #[account(init, payer = payer, seeds = NamespaceConfig::seeds(), bump)]
-    pub config: &'info mut Account<NamespaceConfig>,
-    pub system_program: &'info Program<System>,
+pub struct InitNsConfig {
+    #[account(mut)]
+    pub payer: Signer,
+    #[account(mut, init, payer = payer, seeds = NamespaceConfig::seeds(), bump)]
+    pub config: Account<NamespaceConfig>,
+    pub system_program: Program<System>,
 }
 
-impl<'info> InitNsConfig<'info> {
+impl InitNsConfig {
     pub fn handler(
         &mut self,
         namespace: u32,

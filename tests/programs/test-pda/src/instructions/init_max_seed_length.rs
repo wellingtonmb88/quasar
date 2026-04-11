@@ -4,14 +4,15 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct InitMaxSeedLength<'info> {
-    pub payer: &'info mut Signer,
-    #[account(init, payer = payer, seeds = MaxSeedAccount::seeds(), bump)]
-    pub max_seed: &'info mut Account<MaxSeedAccount>,
-    pub system_program: &'info Program<System>,
+pub struct InitMaxSeedLength {
+    #[account(mut)]
+    pub payer: Signer,
+    #[account(mut, init, payer = payer, seeds = MaxSeedAccount::seeds(), bump)]
+    pub max_seed: Account<MaxSeedAccount>,
+    pub system_program: Program<System>,
 }
 
-impl<'info> InitMaxSeedLength<'info> {
+impl InitMaxSeedLength {
     #[inline(always)]
     pub fn handler(&mut self, bumps: &InitMaxSeedLengthBumps) -> Result<(), ProgramError> {
         self.max_seed.set_inner(MaxSeedAccountInner {

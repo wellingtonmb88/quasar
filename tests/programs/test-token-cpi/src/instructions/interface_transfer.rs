@@ -4,18 +4,20 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct InterfaceTransfer<'info> {
-    pub authority: &'info Signer,
-    pub from: &'info mut InterfaceAccount<Token>,
-    pub to: &'info mut InterfaceAccount<Token>,
-    pub token_program: &'info Interface<TokenInterface>,
+pub struct InterfaceTransfer {
+    pub authority: Signer,
+    #[account(mut)]
+    pub from: InterfaceAccount<Token>,
+    #[account(mut)]
+    pub to: InterfaceAccount<Token>,
+    pub token_program: Interface<TokenInterface>,
 }
 
-impl<'info> InterfaceTransfer<'info> {
+impl InterfaceTransfer {
     #[inline(always)]
     pub fn handler(&self, amount: u64) -> Result<(), ProgramError> {
         self.token_program
-            .transfer(self.from, self.to, self.authority, amount)
+            .transfer(&self.from, &self.to, &self.authority, amount)
             .invoke()
     }
 }

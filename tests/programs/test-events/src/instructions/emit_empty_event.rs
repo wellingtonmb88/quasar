@@ -1,11 +1,11 @@
 use {crate::events::EmptyEvent, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct EmitEmptyEvent<'info> {
-    pub signer: &'info Signer,
+pub struct EmitEmptyEvent {
+    pub signer: Signer,
 }
 
-impl<'info> EmitEmptyEvent<'info> {
+impl EmitEmptyEvent {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         emit!(EmptyEvent {});

@@ -1,11 +1,11 @@
 use quasar_lang::prelude::*;
 
 #[derive(Accounts)]
-pub struct ProgramErrorIx<'info> {
-    pub signer: &'info Signer,
+pub struct ProgramErrorIx {
+    pub signer: Signer,
 }
 
-impl<'info> ProgramErrorIx<'info> {
+impl ProgramErrorIx {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Err(ProgramError::InvalidAccountData)

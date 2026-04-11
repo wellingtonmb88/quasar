@@ -4,11 +4,11 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct ReturnU64<'info> {
-    pub program: &'info Program<TestMiscProgram>,
+pub struct ReturnU64 {
+    pub program: Program<TestMiscProgram>,
 }
 
-impl<'info> ReturnU64<'info> {
+impl ReturnU64 {
     #[inline(always)]
     pub fn handler(&self) -> Result<u64, ProgramError> {
         Ok(RETURN_U64_VALUE)

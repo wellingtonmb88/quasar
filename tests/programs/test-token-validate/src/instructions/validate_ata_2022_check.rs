@@ -4,15 +4,15 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct ValidateAta2022Check<'info> {
+pub struct ValidateAta2022Check {
     #[account(associated_token::mint = mint, associated_token::authority = wallet)]
-    pub ata: &'info Account<Token2022>,
-    pub mint: &'info Account<Mint2022>,
-    pub wallet: &'info Signer,
-    pub token_program: &'info Program<Token2022>,
+    pub ata: Account<Token2022>,
+    pub mint: Account<Mint2022>,
+    pub wallet: Signer,
+    pub token_program: Program<Token2022>,
 }
 
-impl<'info> ValidateAta2022Check<'info> {
+impl ValidateAta2022Check {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

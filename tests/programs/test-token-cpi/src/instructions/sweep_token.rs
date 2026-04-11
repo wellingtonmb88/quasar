@@ -6,17 +6,17 @@ use {
 /// Tests sweep without close — transfers all remaining tokens at end of
 /// instruction.
 #[derive(Accounts)]
-pub struct SweepToken<'info> {
-    pub authority: &'info Signer,
-    #[account(sweep = receiver, token::mint = mint, token::authority = authority)]
-    pub source: &'info mut Account<Token>,
+pub struct SweepToken {
+    pub authority: Signer,
+    #[account(mut, sweep = receiver, token::mint = mint, token::authority = authority)]
+    pub source: Account<Token>,
     #[account(mut)]
-    pub receiver: &'info mut Account<Token>,
-    pub mint: &'info Account<Mint>,
-    pub token_program: &'info Program<Token>,
+    pub receiver: Account<Token>,
+    pub mint: Account<Mint>,
+    pub token_program: Program<Token>,
 }
 
-impl<'info> SweepToken<'info> {
+impl SweepToken {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

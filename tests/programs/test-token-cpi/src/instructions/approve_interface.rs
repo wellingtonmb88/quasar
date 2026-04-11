@@ -4,18 +4,19 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct ApproveInterface<'info> {
-    pub authority: &'info Signer,
-    pub source: &'info mut InterfaceAccount<Token>,
-    pub delegate: &'info UncheckedAccount,
-    pub token_program: &'info Interface<TokenInterface>,
+pub struct ApproveInterface {
+    pub authority: Signer,
+    #[account(mut)]
+    pub source: InterfaceAccount<Token>,
+    pub delegate: UncheckedAccount,
+    pub token_program: Interface<TokenInterface>,
 }
 
-impl<'info> ApproveInterface<'info> {
+impl ApproveInterface {
     #[inline(always)]
     pub fn handler(&self, amount: u64) -> Result<(), ProgramError> {
         self.token_program
-            .approve(self.source, self.delegate, self.authority, amount)
+            .approve(&self.source, &self.delegate, &self.authority, amount)
             .invoke()
     }
 }

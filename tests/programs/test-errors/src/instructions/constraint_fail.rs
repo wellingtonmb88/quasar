@@ -1,12 +1,12 @@
 use {crate::errors::TestError, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct ConstraintFail<'info> {
+pub struct ConstraintFail {
     #[account(constraint = false @ TestError::ConstraintCustom)]
-    pub target: &'info SystemAccount,
+    pub target: SystemAccount,
 }
 
-impl<'info> ConstraintFail<'info> {
+impl ConstraintFail {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

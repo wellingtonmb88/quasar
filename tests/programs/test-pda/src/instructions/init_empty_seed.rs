@@ -4,14 +4,15 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct InitEmptySeed<'info> {
-    pub payer: &'info mut Signer,
-    #[account(init, payer = payer, seeds = EmptySeedAccount::seeds(), bump)]
-    pub empty: &'info mut Account<EmptySeedAccount>,
-    pub system_program: &'info Program<System>,
+pub struct InitEmptySeed {
+    #[account(mut)]
+    pub payer: Signer,
+    #[account(mut, init, payer = payer, seeds = EmptySeedAccount::seeds(), bump)]
+    pub empty: Account<EmptySeedAccount>,
+    pub system_program: Program<System>,
 }
 
-impl<'info> InitEmptySeed<'info> {
+impl InitEmptySeed {
     #[inline(always)]
     pub fn handler(&mut self, bumps: &InitEmptySeedBumps) -> Result<(), ProgramError> {
         self.empty

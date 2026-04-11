@@ -4,14 +4,15 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct InitIfNeeded<'info> {
-    pub payer: &'info mut Signer,
-    #[account(init_if_needed, payer = payer, seeds = SimpleAccount::seeds(payer), bump)]
-    pub account: &'info mut Account<SimpleAccount>,
-    pub system_program: &'info Program<System>,
+pub struct InitIfNeeded {
+    #[account(mut)]
+    pub payer: Signer,
+    #[account(mut, init_if_needed, payer = payer, seeds = SimpleAccount::seeds(payer), bump)]
+    pub account: Account<SimpleAccount>,
+    pub system_program: Program<System>,
 }
 
-impl<'info> InitIfNeeded<'info> {
+impl InitIfNeeded {
     #[inline(always)]
     pub fn handler(&mut self, value: u64, bumps: &InitIfNeededBumps) -> Result<(), ProgramError> {
         self.account.set_inner(SimpleAccountInner {

@@ -1,21 +1,22 @@
 use {crate::state::MultisigConfig, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct SetLabel<'info> {
-    pub creator: &'info mut Signer,
+pub struct SetLabel<'config> {
+    #[account(mut)]
+    pub creator: Signer,
     #[account(
         mut,
         has_one = creator,
         seeds = MultisigConfig::seeds(creator),
         bump = config.bump
     )]
-    pub config: Account<MultisigConfig<'info>>,
-    pub system_program: &'info Program<System>,
+    pub config: Account<MultisigConfig<'config>>,
+    pub system_program: Program<System>,
 }
 
-impl<'info> SetLabel<'info> {
+impl SetLabel<'_> {
     #[inline(always)]
     pub fn update_label(&mut self, label: &str) -> Result<(), ProgramError> {
-        self.config.set_label(self.creator, label)
+        self.config.set_label(&self.creator, label)
     }
 }

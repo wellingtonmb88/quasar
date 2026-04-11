@@ -7,14 +7,15 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct ReadRent<'info> {
-    pub payer: &'info mut Signer,
-    #[account(init, payer = payer, seeds = RentSnapshot::seeds(), bump)]
-    pub snapshot: &'info mut Account<RentSnapshot>,
-    pub system_program: &'info Program<System>,
+pub struct ReadRent {
+    #[account(mut)]
+    pub payer: Signer,
+    #[account(mut, init, payer = payer, seeds = RentSnapshot::seeds(), bump)]
+    pub snapshot: Account<RentSnapshot>,
+    pub system_program: Program<System>,
 }
 
-impl<'info> ReadRent<'info> {
+impl ReadRent {
     #[inline(always)]
     pub fn handler(&mut self) -> Result<(), ProgramError> {
         let rent = Rent::get()?;

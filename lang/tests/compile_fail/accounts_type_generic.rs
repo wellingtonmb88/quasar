@@ -2,8 +2,8 @@
 use quasar_lang::prelude::*;
 
 #[derive(Accounts)]
-pub struct BadGenericAccount<'info, T> {
-    pub signer: &'info Signer,
+pub struct BadGenericAccount<T> {
+    pub signer: Signer,
     pub _marker: core::marker::PhantomData<T>,
 }
 

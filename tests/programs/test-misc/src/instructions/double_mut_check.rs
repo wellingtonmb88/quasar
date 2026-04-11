@@ -1,15 +1,15 @@
 use {crate::state::SimpleAccount, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct DoubleMutCheck<'info> {
-    pub signer: &'info Signer,
+pub struct DoubleMutCheck {
+    pub signer: Signer,
     #[account(mut)]
-    pub account_a: &'info mut Account<SimpleAccount>,
+    pub account_a: Account<SimpleAccount>,
     #[account(mut)]
-    pub account_b: &'info mut Account<SimpleAccount>,
+    pub account_b: Account<SimpleAccount>,
 }
 
-impl<'info> DoubleMutCheck<'info> {
+impl DoubleMutCheck {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

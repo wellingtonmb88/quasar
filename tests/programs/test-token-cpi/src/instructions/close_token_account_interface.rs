@@ -4,21 +4,23 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct CloseTokenAccountInterface<'info> {
-    pub account: &'info mut InterfaceAccount<Token>,
-    pub destination: &'info mut Signer,
+pub struct CloseTokenAccountInterface {
+    #[account(mut)]
+    pub account: InterfaceAccount<Token>,
+    #[account(mut)]
+    pub destination: Signer,
     /// CHECK: authority may equal destination when the signer is closing to
     /// themselves.
     #[account(dup)]
-    pub authority: &'info Signer,
-    pub token_program: &'info Interface<TokenInterface>,
+    pub authority: Signer,
+    pub token_program: Interface<TokenInterface>,
 }
 
-impl<'info> CloseTokenAccountInterface<'info> {
+impl CloseTokenAccountInterface {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         self.token_program
-            .close_account(self.account, self.destination, self.authority)
+            .close_account(&self.account, &self.destination, &self.authority)
             .invoke()
     }
 }

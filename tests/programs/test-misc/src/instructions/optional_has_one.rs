@@ -1,13 +1,13 @@
 use {crate::state::SimpleAccount, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct OptionalHasOne<'info> {
-    pub authority: &'info Signer,
+pub struct OptionalHasOne {
+    pub authority: Signer,
     #[account(has_one = authority)]
-    pub account: Option<&'info Account<SimpleAccount>>,
+    pub account: Option<Account<SimpleAccount>>,
 }
 
-impl<'info> OptionalHasOne<'info> {
+impl OptionalHasOne {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

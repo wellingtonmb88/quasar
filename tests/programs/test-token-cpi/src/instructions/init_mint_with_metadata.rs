@@ -4,10 +4,12 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct InitMintWithMetadata<'info> {
-    pub payer: &'info mut Signer,
-    pub mint_authority: &'info Signer,
+pub struct InitMintWithMetadata {
+    #[account(mut)]
+    pub payer: Signer,
+    pub mint_authority: Signer,
     #[account(
+        mut,
         init,
         mint::decimals = 0,
         mint::authority = mint_authority,
@@ -17,15 +19,16 @@ pub struct InitMintWithMetadata<'info> {
         metadata::seller_fee_basis_points = 500,
         metadata::is_mutable = true,
     )]
-    pub mint: &'info mut Account<Mint>,
-    pub metadata: &'info mut UncheckedAccount,
-    pub metadata_program: &'info Program<MetadataProgram>,
-    pub token_program: &'info Program<Token>,
-    pub system_program: &'info Program<System>,
-    pub rent: &'info Sysvar<Rent>,
+    pub mint: Account<Mint>,
+    #[account(mut)]
+    pub metadata: UncheckedAccount,
+    pub metadata_program: Program<MetadataProgram>,
+    pub token_program: Program<Token>,
+    pub system_program: Program<System>,
+    pub rent: Sysvar<Rent>,
 }
 
-impl<'info> InitMintWithMetadata<'info> {
+impl InitMintWithMetadata {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

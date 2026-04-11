@@ -1,13 +1,14 @@
 use quasar_lang::prelude::*;
 
 #[derive(Accounts)]
-pub struct ThreeAccountsDup<'info> {
-    pub first: &'info Signer,
-    pub second: &'info mut UncheckedAccount,
-    pub third: &'info UncheckedAccount,
+pub struct ThreeAccountsDup {
+    pub first: Signer,
+    #[account(mut)]
+    pub second: UncheckedAccount,
+    pub third: UncheckedAccount,
 }
 
-impl<'info> ThreeAccountsDup<'info> {
+impl ThreeAccountsDup {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

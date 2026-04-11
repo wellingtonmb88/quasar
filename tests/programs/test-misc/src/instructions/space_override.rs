@@ -4,14 +4,15 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct SpaceOverride<'info> {
-    pub payer: &'info mut Signer,
-    #[account(init, space = 100, seeds = SpaceTestAccount::seeds(payer), bump)]
-    pub account: &'info mut Account<SpaceTestAccount>,
-    pub system_program: &'info Program<System>,
+pub struct SpaceOverride {
+    #[account(mut)]
+    pub payer: Signer,
+    #[account(mut, init, space = 100, seeds = SpaceTestAccount::seeds(payer), bump)]
+    pub account: Account<SpaceTestAccount>,
+    pub system_program: Program<System>,
 }
 
-impl<'info> SpaceOverride<'info> {
+impl SpaceOverride {
     #[inline(always)]
     pub fn handler(&mut self, value: u64, bumps: &SpaceOverrideBumps) -> Result<(), ProgramError> {
         self.account.set_inner(SpaceTestAccountInner {

@@ -4,17 +4,17 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct SweepTokenInterface<'info> {
-    pub authority: &'info Signer,
-    #[account(sweep = receiver, token::mint = mint, token::authority = authority)]
-    pub source: &'info mut InterfaceAccount<Token>,
+pub struct SweepTokenInterface {
+    pub authority: Signer,
+    #[account(mut, sweep = receiver, token::mint = mint, token::authority = authority)]
+    pub source: InterfaceAccount<Token>,
     #[account(mut)]
-    pub receiver: &'info mut InterfaceAccount<Token>,
-    pub mint: &'info InterfaceAccount<Mint>,
-    pub token_program: &'info Interface<TokenInterface>,
+    pub receiver: InterfaceAccount<Token>,
+    pub mint: InterfaceAccount<Mint>,
+    pub token_program: Interface<TokenInterface>,
 }
 
-impl<'info> SweepTokenInterface<'info> {
+impl SweepTokenInterface {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

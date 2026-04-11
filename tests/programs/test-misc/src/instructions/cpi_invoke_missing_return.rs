@@ -1,11 +1,11 @@
 use {crate::state::TestMiscProgram, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct CpiInvokeMissingReturn<'info> {
-    pub program: &'info Program<TestMiscProgram>,
+pub struct CpiInvokeMissingReturn {
+    pub program: Program<TestMiscProgram>,
 }
 
-impl<'info> CpiInvokeMissingReturn<'info> {
+impl CpiInvokeMissingReturn {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         quasar_lang::cpi::CpiCall::<1, 1>::new(

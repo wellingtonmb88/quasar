@@ -1,12 +1,12 @@
 use quasar_lang::prelude::*;
 
 #[derive(Accounts)]
-pub struct ConstraintDefault<'info> {
+pub struct ConstraintDefault {
     #[account(constraint = false)]
-    pub target: &'info SystemAccount,
+    pub target: SystemAccount,
 }
 
-impl<'info> ConstraintDefault<'info> {
+impl ConstraintDefault {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

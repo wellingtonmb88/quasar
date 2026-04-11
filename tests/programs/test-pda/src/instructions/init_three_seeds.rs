@@ -4,16 +4,17 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct InitThreeSeeds<'info> {
-    pub payer: &'info mut Signer,
-    pub first: &'info Signer,
-    pub second: &'info Signer,
-    #[account(init, payer = payer, seeds = ThreeSeedAccount::seeds(first, second), bump)]
-    pub triple: &'info mut Account<ThreeSeedAccount>,
-    pub system_program: &'info Program<System>,
+pub struct InitThreeSeeds {
+    #[account(mut)]
+    pub payer: Signer,
+    pub first: Signer,
+    pub second: Signer,
+    #[account(mut, init, payer = payer, seeds = ThreeSeedAccount::seeds(first, second), bump)]
+    pub triple: Account<ThreeSeedAccount>,
+    pub system_program: Program<System>,
 }
 
-impl<'info> InitThreeSeeds<'info> {
+impl InitThreeSeeds {
     #[inline(always)]
     pub fn handler(&mut self, bumps: &InitThreeSeedsBumps) -> Result<(), ProgramError> {
         self.triple.set_inner(ThreeSeedAccountInner {

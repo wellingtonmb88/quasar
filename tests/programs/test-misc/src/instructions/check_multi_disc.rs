@@ -1,11 +1,11 @@
 use {crate::state::MultiDiscAccount, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct CheckMultiDisc<'info> {
-    pub account: &'info Account<MultiDiscAccount>,
+pub struct CheckMultiDisc {
+    pub account: Account<MultiDiscAccount>,
 }
 
-impl<'info> CheckMultiDisc<'info> {
+impl CheckMultiDisc {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

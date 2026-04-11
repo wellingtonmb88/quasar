@@ -4,14 +4,15 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct InitLiteralSeed<'info> {
-    pub payer: &'info mut Signer,
-    #[account(init, payer = payer, seeds = ConfigAccount::seeds(), bump)]
-    pub config: &'info mut Account<ConfigAccount>,
-    pub system_program: &'info Program<System>,
+pub struct InitLiteralSeed {
+    #[account(mut)]
+    pub payer: Signer,
+    #[account(mut, init, payer = payer, seeds = ConfigAccount::seeds(), bump)]
+    pub config: Account<ConfigAccount>,
+    pub system_program: Program<System>,
 }
 
-impl<'info> InitLiteralSeed<'info> {
+impl InitLiteralSeed {
     #[inline(always)]
     pub fn handler(&mut self, bumps: &InitLiteralSeedBumps) -> Result<(), ProgramError> {
         self.config

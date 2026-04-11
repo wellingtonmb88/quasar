@@ -4,14 +4,15 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct InitializeSimple<'info> {
-    pub payer: &'info mut Signer,
-    #[account(init, payer = payer, seeds = SimpleAccount::seeds(payer), bump)]
-    pub account: &'info mut Account<SimpleAccount>,
-    pub system_program: &'info Program<System>,
+pub struct InitializeSimple {
+    #[account(mut)]
+    pub payer: Signer,
+    #[account(mut, init, payer = payer, seeds = SimpleAccount::seeds(payer), bump)]
+    pub account: Account<SimpleAccount>,
+    pub system_program: Program<System>,
 }
 
-impl<'info> InitializeSimple<'info> {
+impl InitializeSimple {
     #[inline(always)]
     pub fn handler(
         &mut self,

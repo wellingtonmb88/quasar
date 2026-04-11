@@ -4,15 +4,15 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct ValidateMintWithFreeze2022Check<'info> {
+pub struct ValidateMintWithFreeze2022Check {
     #[account(mint::authority = mint_authority, mint::decimals = 6, mint::freeze_authority = freeze_authority)]
-    pub mint: &'info Account<Mint2022>,
-    pub mint_authority: &'info Signer,
-    pub freeze_authority: &'info UncheckedAccount,
-    pub token_program: &'info Program<Token2022>,
+    pub mint: Account<Mint2022>,
+    pub mint_authority: Signer,
+    pub freeze_authority: UncheckedAccount,
+    pub token_program: Program<Token2022>,
 }
 
-impl<'info> ValidateMintWithFreeze2022Check<'info> {
+impl ValidateMintWithFreeze2022Check {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

@@ -1,9 +1,10 @@
 use quasar_lang::prelude::*;
 
 #[derive(Accounts)]
-pub struct InitMaxMultiSeeds<'info> {
-    pub payer: &'info mut Signer,
-    pub authority: &'info Signer,
+pub struct InitMaxMultiSeeds {
+    #[account(mut)]
+    pub payer: Signer,
+    pub authority: Signer,
     #[account(
         seeds = [
             b"max", b"max", b"max", b"max", b"max",
@@ -12,11 +13,11 @@ pub struct InitMaxMultiSeeds<'info> {
         ],
         bump
     )]
-    pub complex: &'info UncheckedAccount,
-    pub system_program: &'info Program<System>,
+    pub complex: UncheckedAccount,
+    pub system_program: Program<System>,
 }
 
-impl<'info> InitMaxMultiSeeds<'info> {
+impl InitMaxMultiSeeds {
     #[inline(always)]
     pub fn handler(&mut self) -> Result<(), ProgramError> {
         Ok(())

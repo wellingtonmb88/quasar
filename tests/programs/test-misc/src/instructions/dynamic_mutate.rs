@@ -1,18 +1,18 @@
 use {crate::state::DynamicAccount, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct DynamicMutate<'info> {
+pub struct DynamicMutate<'account> {
     #[account(mut)]
-    pub account: Account<DynamicAccount<'info>>,
+    pub account: Account<DynamicAccount<'account>>,
     #[account(mut)]
-    pub payer: &'info mut Signer,
-    pub system_program: &'info Program<System>,
+    pub payer: Signer,
+    pub system_program: Program<System>,
 }
 
-impl<'info> DynamicMutate<'info> {
+impl DynamicMutate<'_> {
     #[inline(always)]
     pub fn handler(&mut self, new_name: &str) -> Result<(), ProgramError> {
-        self.account.set_name(self.payer, new_name)?;
+        self.account.set_name(&self.payer, new_name)?;
         Ok(())
     }
 }

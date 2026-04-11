@@ -6,11 +6,11 @@ extern crate alloc;
 use {alloc::vec, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct NoHeapAllocAttempt<'info> {
-    pub signer: &'info Signer,
+pub struct NoHeapAllocAttempt {
+    pub signer: Signer,
 }
 
-impl<'info> NoHeapAllocAttempt<'info> {
+impl NoHeapAllocAttempt {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         #[allow(clippy::useless_vec)]

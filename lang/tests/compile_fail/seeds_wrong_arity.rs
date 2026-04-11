@@ -12,10 +12,10 @@ pub struct Vault {
 }
 
 #[derive(Accounts)]
-pub struct Bad<'info> {
-    pub authority: &'info Signer,
+pub struct Bad {
+    pub authority: Signer,
     #[account(seeds = Vault::seeds(), bump = vault.bump)]
-    pub vault: &'info Account<Vault>,
+    pub vault: Account<Vault>,
 }
 
 fn main() {}

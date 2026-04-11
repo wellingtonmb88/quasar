@@ -1,11 +1,11 @@
 use {crate::events::SimpleEvent, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct EmitU64Event<'info> {
-    pub signer: &'info Signer,
+pub struct EmitU64Event {
+    pub signer: Signer,
 }
 
-impl<'info> EmitU64Event<'info> {
+impl EmitU64Event {
     #[inline(always)]
     pub fn handler(&self, value: u64) -> Result<(), ProgramError> {
         emit!(SimpleEvent { value });

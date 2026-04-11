@@ -4,18 +4,18 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct CloseTokenInterface<'info> {
-    pub authority: &'info Signer,
-    #[account(close = destination, token::mint = mint, token::authority = authority)]
-    pub token_account: &'info mut InterfaceAccount<Token>,
-    pub mint: &'info InterfaceAccount<Mint>,
+pub struct CloseTokenInterface {
+    pub authority: Signer,
+    #[account(mut, close = destination, token::mint = mint, token::authority = authority)]
+    pub token_account: InterfaceAccount<Token>,
+    pub mint: InterfaceAccount<Mint>,
     /// CHECK: destination may alias authority (close sends lamports to it).
     #[account(mut, dup)]
-    pub destination: &'info mut UncheckedAccount,
-    pub token_program: &'info Interface<TokenInterface>,
+    pub destination: UncheckedAccount,
+    pub token_program: Interface<TokenInterface>,
 }
 
-impl<'info> CloseTokenInterface<'info> {
+impl CloseTokenInterface {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

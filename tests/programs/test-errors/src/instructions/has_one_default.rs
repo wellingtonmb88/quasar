@@ -1,13 +1,13 @@
 use {crate::state::ErrorTestAccount, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct HasOneDefault<'info> {
-    pub authority: &'info Signer,
+pub struct HasOneDefault {
+    pub authority: Signer,
     #[account(has_one = authority)]
-    pub account: &'info Account<ErrorTestAccount>,
+    pub account: Account<ErrorTestAccount>,
 }
 
-impl<'info> HasOneDefault<'info> {
+impl HasOneDefault {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

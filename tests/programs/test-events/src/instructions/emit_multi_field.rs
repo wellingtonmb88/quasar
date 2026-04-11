@@ -1,11 +1,11 @@
 use {crate::events::MultiEvent, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct EmitMultiField<'info> {
-    pub signer: &'info Signer,
+pub struct EmitMultiField {
+    pub signer: Signer,
 }
 
-impl<'info> EmitMultiField<'info> {
+impl EmitMultiField {
     #[inline(always)]
     pub fn handler(&self, a: u64, b: u64, c: Address) -> Result<(), ProgramError> {
         emit!(MultiEvent { a, b, c });

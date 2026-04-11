@@ -4,18 +4,20 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct MintToInterface<'info> {
-    pub authority: &'info Signer,
-    pub mint: &'info mut InterfaceAccount<Mint>,
-    pub to: &'info mut InterfaceAccount<Token>,
-    pub token_program: &'info Interface<TokenInterface>,
+pub struct MintToInterface {
+    pub authority: Signer,
+    #[account(mut)]
+    pub mint: InterfaceAccount<Mint>,
+    #[account(mut)]
+    pub to: InterfaceAccount<Token>,
+    pub token_program: Interface<TokenInterface>,
 }
 
-impl<'info> MintToInterface<'info> {
+impl MintToInterface {
     #[inline(always)]
     pub fn handler(&self, amount: u64) -> Result<(), ProgramError> {
         self.token_program
-            .mint_to(self.mint, self.to, self.authority, amount)
+            .mint_to(&self.mint, &self.to, &self.authority, amount)
             .invoke()
     }
 }

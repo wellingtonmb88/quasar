@@ -2,15 +2,15 @@ use quasar_lang::prelude::*;
 
 /// Tests: duplicate readonly aliases are accepted when explicitly annotated.
 #[derive(Accounts)]
-pub struct HeaderDupReadonly<'info> {
-    pub source: &'info Signer,
+pub struct HeaderDupReadonly {
+    pub source: Signer,
     /// CHECK: test-only — validates that duplicate readonly aliases are parsed
     /// correctly.
     #[account(dup)]
-    pub destination: &'info UncheckedAccount,
+    pub destination: UncheckedAccount,
 }
 
-impl<'info> HeaderDupReadonly<'info> {
+impl HeaderDupReadonly {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

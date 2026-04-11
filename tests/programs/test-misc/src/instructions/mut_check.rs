@@ -4,12 +4,12 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct MutCheck<'info> {
+pub struct MutCheck {
     #[account(mut)]
-    pub account: &'info mut Account<SimpleAccount>,
+    pub account: Account<SimpleAccount>,
 }
 
-impl<'info> MutCheck<'info> {
+impl MutCheck {
     #[inline(always)]
     pub fn handler(&mut self, new_value: u64) -> Result<(), ProgramError> {
         let authority = self.account.authority;

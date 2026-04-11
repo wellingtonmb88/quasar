@@ -4,18 +4,20 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct BurnT22<'info> {
-    pub authority: &'info Signer,
-    pub from: &'info mut Account<Token2022>,
-    pub mint: &'info mut Account<Mint2022>,
-    pub token_program: &'info Program<Token2022>,
+pub struct BurnT22 {
+    pub authority: Signer,
+    #[account(mut)]
+    pub from: Account<Token2022>,
+    #[account(mut)]
+    pub mint: Account<Mint2022>,
+    pub token_program: Program<Token2022>,
 }
 
-impl<'info> BurnT22<'info> {
+impl BurnT22 {
     #[inline(always)]
     pub fn handler(&self, amount: u64) -> Result<(), ProgramError> {
         self.token_program
-            .burn(self.from, self.mint, self.authority, amount)
+            .burn(&self.from, &self.mint, &self.authority, amount)
             .invoke()
     }
 }

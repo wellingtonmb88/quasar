@@ -1,11 +1,11 @@
 use quasar_lang::prelude::*;
 
 #[derive(Accounts)]
-pub struct DynamicInstructionCheck<'info> {
-    pub authority: &'info Signer,
+pub struct DynamicInstructionCheck {
+    pub authority: Signer,
 }
 
-impl<'info> DynamicInstructionCheck<'info> {
+impl DynamicInstructionCheck {
     #[inline(always)]
     pub fn handler(&self, _name: &str) -> Result<(), ProgramError> {
         Ok(())

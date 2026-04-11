@@ -4,18 +4,19 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct InitIfNeededAta<'info> {
-    pub payer: &'info mut Signer,
-    #[account(init_if_needed, associated_token::mint = mint, associated_token::authority = wallet)]
-    pub ata: &'info mut Account<Token>,
-    pub wallet: &'info Signer,
-    pub mint: &'info Account<Mint>,
-    pub token_program: &'info Program<Token>,
-    pub system_program: &'info Program<System>,
-    pub ata_program: &'info Program<AssociatedTokenProgram>,
+pub struct InitIfNeededAta {
+    #[account(mut)]
+    pub payer: Signer,
+    #[account(mut, init_if_needed, associated_token::mint = mint, associated_token::authority = wallet)]
+    pub ata: Account<Token>,
+    pub wallet: Signer,
+    pub mint: Account<Mint>,
+    pub token_program: Program<Token>,
+    pub system_program: Program<System>,
+    pub ata_program: Program<AssociatedTokenProgram>,
 }
 
-impl<'info> InitIfNeededAta<'info> {
+impl InitIfNeededAta {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

@@ -1,12 +1,12 @@
 use {crate::state::ErrorTestAccount, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct MutAccountCheck<'info> {
+pub struct MutAccountCheck {
     #[account(mut)]
-    pub account: &'info Account<ErrorTestAccount>,
+    pub account: Account<ErrorTestAccount>,
 }
 
-impl<'info> MutAccountCheck<'info> {
+impl MutAccountCheck {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

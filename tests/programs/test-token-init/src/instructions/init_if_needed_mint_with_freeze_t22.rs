@@ -4,22 +4,24 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct InitIfNeededMintWithFreezeT22<'info> {
-    pub payer: &'info mut Signer,
+pub struct InitIfNeededMintWithFreezeT22 {
+    #[account(mut)]
+    pub payer: Signer,
     #[account(
+        mut,
         init_if_needed,
         mint::decimals = 6,
         mint::authority = mint_authority,
         mint::freeze_authority = freeze_authority
     )]
-    pub mint: &'info mut Account<Mint2022>,
-    pub mint_authority: &'info Signer,
-    pub freeze_authority: &'info UncheckedAccount,
-    pub token_program: &'info Program<Token2022>,
-    pub system_program: &'info Program<System>,
+    pub mint: Account<Mint2022>,
+    pub mint_authority: Signer,
+    pub freeze_authority: UncheckedAccount,
+    pub token_program: Program<Token2022>,
+    pub system_program: Program<System>,
 }
 
-impl<'info> InitIfNeededMintWithFreezeT22<'info> {
+impl InitIfNeededMintWithFreezeT22 {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

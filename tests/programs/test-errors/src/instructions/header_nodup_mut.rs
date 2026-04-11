@@ -2,11 +2,12 @@ use quasar_lang::prelude::*;
 
 /// Tests: "Account 'account' (index 0): must be writable with no duplicates"
 #[derive(Accounts)]
-pub struct HeaderNoDupMut<'info> {
-    pub account: &'info mut UncheckedAccount,
+pub struct HeaderNoDupMut {
+    #[account(mut)]
+    pub account: UncheckedAccount,
 }
 
-impl<'info> HeaderNoDupMut<'info> {
+impl HeaderNoDupMut {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

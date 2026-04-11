@@ -3,11 +3,12 @@ use quasar_lang::prelude::*;
 /// Tests: "Account 'account' (index 0): must be writable signer with no
 /// duplicates"
 #[derive(Accounts)]
-pub struct HeaderNoDupMutSigner<'info> {
-    pub account: &'info mut Signer,
+pub struct HeaderNoDupMutSigner {
+    #[account(mut)]
+    pub account: Signer,
 }
 
-impl<'info> HeaderNoDupMutSigner<'info> {
+impl HeaderNoDupMutSigner {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

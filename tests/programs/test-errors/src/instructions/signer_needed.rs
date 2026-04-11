@@ -1,11 +1,11 @@
 use quasar_lang::prelude::*;
 
 #[derive(Accounts)]
-pub struct SignerNeeded<'info> {
-    pub signer: &'info Signer,
+pub struct SignerNeeded {
+    pub signer: Signer,
 }
 
-impl<'info> SignerNeeded<'info> {
+impl SignerNeeded {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

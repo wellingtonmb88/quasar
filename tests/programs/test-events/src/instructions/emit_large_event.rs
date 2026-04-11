@@ -1,11 +1,11 @@
 use {crate::events::LargeEvent, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct EmitLargeEvent<'info> {
-    pub signer: &'info Signer,
+pub struct EmitLargeEvent {
+    pub signer: Signer,
 }
 
-impl<'info> EmitLargeEvent<'info> {
+impl EmitLargeEvent {
     #[inline(always)]
     #[allow(clippy::too_many_arguments)]
     pub fn handler(

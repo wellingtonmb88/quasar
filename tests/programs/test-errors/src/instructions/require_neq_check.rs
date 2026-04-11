@@ -1,11 +1,11 @@
 use {crate::errors::TestError, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct RequireNeqCheck<'info> {
-    pub signer: &'info Signer,
+pub struct RequireNeqCheck {
+    pub signer: Signer,
 }
 
-impl<'info> RequireNeqCheck<'info> {
+impl RequireNeqCheck {
     #[inline(always)]
     pub fn handler(&self, a: u64, b: u64) -> Result<(), ProgramError> {
         require!(a != b, TestError::RequireEqFailed);

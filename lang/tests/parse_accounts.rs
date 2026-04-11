@@ -45,14 +45,9 @@ impl AccountBuffer {
 }
 
 #[derive(Accounts)]
-struct OnlySigner<'info> {
-    signer: &'info mut Signer,
-}
-
-#[derive(Accounts)]
-struct MixedLifetimes<'signer, 'readonly> {
-    signer: &'signer mut Signer,
-    readonly_signer: &'readonly Signer,
+struct OnlySigner {
+    #[account(mut)]
+    signer: Signer,
 }
 
 #[test]
@@ -78,25 +73,4 @@ fn parse_accounts_rejects_extra_non_composite_accounts() {
         Err(err) => err,
     };
     assert_eq!(err, ProgramError::InvalidArgument);
-}
-
-#[test]
-fn parse_accounts_accepts_fields_with_different_lifetimes() {
-    let mut first = AccountBuffer::new();
-    first.init_signer(1);
-    let mut second = AccountBuffer::new();
-    second.init_signer(2);
-    let mut accounts = unsafe { [first.view(), second.view()] };
-
-    let (parsed, _) = MixedLifetimes::parse(&mut accounts, &Address::default())
-        .expect("parse should accept distinct field lifetimes");
-
-    assert_eq!(
-        parsed.signer.to_account_view().address(),
-        &Address::from([1; 32])
-    );
-    assert_eq!(
-        parsed.readonly_signer.to_account_view().address(),
-        &Address::from([2; 32])
-    );
 }

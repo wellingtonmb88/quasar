@@ -4,15 +4,16 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct InitMultiSeeds<'info> {
-    pub payer: &'info mut Signer,
-    pub authority: &'info Signer,
-    #[account(init, payer = payer, seeds = ComplexAccount::seeds(payer, authority), bump)]
-    pub complex: &'info mut Account<ComplexAccount>,
-    pub system_program: &'info Program<System>,
+pub struct InitMultiSeeds {
+    #[account(mut)]
+    pub payer: Signer,
+    pub authority: Signer,
+    #[account(mut, init, payer = payer, seeds = ComplexAccount::seeds(payer, authority), bump)]
+    pub complex: Account<ComplexAccount>,
+    pub system_program: Program<System>,
 }
 
-impl<'info> InitMultiSeeds<'info> {
+impl InitMultiSeeds {
     #[inline(always)]
     pub fn handler(
         &mut self,

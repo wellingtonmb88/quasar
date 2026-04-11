@@ -1,11 +1,11 @@
 use {crate::events::AddressEvent, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct EmitAddressEvent<'info> {
-    pub signer: &'info Signer,
+pub struct EmitAddressEvent {
+    pub signer: Signer,
 }
 
-impl<'info> EmitAddressEvent<'info> {
+impl EmitAddressEvent {
     #[inline(always)]
     pub fn handler(&self, addr: Address, value: u64) -> Result<(), ProgramError> {
         emit!(AddressEvent { addr, value });

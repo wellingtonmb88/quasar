@@ -4,19 +4,19 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct SweepAndCloseInterface<'info> {
-    pub authority: &'info Signer,
-    #[account(sweep = receiver, close = destination, token::mint = mint, token::authority = authority)]
-    pub source: &'info mut InterfaceAccount<Token>,
+pub struct SweepAndCloseInterface {
+    pub authority: Signer,
+    #[account(mut, sweep = receiver, close = destination, token::mint = mint, token::authority = authority)]
+    pub source: InterfaceAccount<Token>,
     #[account(mut)]
-    pub receiver: &'info mut InterfaceAccount<Token>,
-    pub mint: &'info InterfaceAccount<Mint>,
+    pub receiver: InterfaceAccount<Token>,
+    pub mint: InterfaceAccount<Mint>,
     #[account(mut)]
-    pub destination: &'info mut UncheckedAccount,
-    pub token_program: &'info Interface<TokenInterface>,
+    pub destination: UncheckedAccount,
+    pub token_program: Interface<TokenInterface>,
 }
 
-impl<'info> SweepAndCloseInterface<'info> {
+impl SweepAndCloseInterface {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

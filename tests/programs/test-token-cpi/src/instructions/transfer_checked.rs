@@ -4,23 +4,25 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct TransferChecked<'info> {
-    pub authority: &'info Signer,
-    pub from: &'info mut Account<Token>,
-    pub mint: &'info Account<Mint>,
-    pub to: &'info mut Account<Token>,
-    pub token_program: &'info Program<Token>,
+pub struct TransferChecked {
+    pub authority: Signer,
+    #[account(mut)]
+    pub from: Account<Token>,
+    pub mint: Account<Mint>,
+    #[account(mut)]
+    pub to: Account<Token>,
+    pub token_program: Program<Token>,
 }
 
-impl<'info> TransferChecked<'info> {
+impl TransferChecked {
     #[inline(always)]
     pub fn handler(&self, amount: u64, decimals: u8) -> Result<(), ProgramError> {
         self.token_program
             .transfer_checked(
-                self.from,
-                self.mint,
-                self.to,
-                self.authority,
+                &self.from,
+                &self.mint,
+                &self.to,
+                &self.authority,
                 amount,
                 decimals,
             )

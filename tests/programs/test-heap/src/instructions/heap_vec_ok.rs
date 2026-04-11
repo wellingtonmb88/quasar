@@ -5,11 +5,11 @@ extern crate alloc;
 use {alloc::vec, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct HeapVecOk<'info> {
-    pub signer: &'info Signer,
+pub struct HeapVecOk {
+    pub signer: Signer,
 }
 
-impl<'info> HeapVecOk<'info> {
+impl HeapVecOk {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         #[allow(clippy::useless_vec)]

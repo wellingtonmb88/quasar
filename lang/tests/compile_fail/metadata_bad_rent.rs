@@ -5,10 +5,12 @@ use quasar_spl::{metadata::MetadataProgram, Mint, Token};
 solana_address::declare_id!("11111111111111111111111111111112");
 
 #[derive(Accounts)]
-pub struct BadMetadataRent<'info> {
-    pub payer: &'info mut Signer,
-    pub mint_authority: &'info Signer,
+pub struct BadMetadataRent {
+    #[account(mut)]
+    pub payer: Signer,
+    pub mint_authority: Signer,
     #[account(
+        mut,
         init,
         payer = payer,
         mint::decimals = 0,
@@ -17,12 +19,13 @@ pub struct BadMetadataRent<'info> {
         metadata::symbol = b"TNFT",
         metadata::uri = b"https://example.com/nft.json",
     )]
-    pub mint: &'info mut Account<Mint>,
-    pub metadata: &'info mut UncheckedAccount,
-    pub metadata_program: &'info Program<MetadataProgram>,
-    pub token_program: &'info Program<Token>,
-    pub system_program: &'info Program<System>,
-    pub rent: &'info UncheckedAccount,
+    pub mint: Account<Mint>,
+    #[account(mut)]
+    pub metadata: UncheckedAccount,
+    pub metadata_program: Program<MetadataProgram>,
+    pub token_program: Program<Token>,
+    pub system_program: Program<System>,
+    pub rent: UncheckedAccount,
 }
 
 fn main() {}

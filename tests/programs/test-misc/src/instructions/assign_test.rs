@@ -1,14 +1,15 @@
 use quasar_lang::prelude::*;
 
 #[derive(Accounts)]
-pub struct AssignTest<'info> {
-    pub account: &'info mut Signer,
-    pub system_program: &'info Program<System>,
+pub struct AssignTest {
+    #[account(mut)]
+    pub account: Signer,
+    pub system_program: Program<System>,
 }
 
-impl<'info> AssignTest<'info> {
+impl AssignTest {
     #[inline(always)]
     pub fn handler(&self, owner: Address) -> Result<(), ProgramError> {
-        self.system_program.assign(self.account, &owner).invoke()
+        self.system_program.assign(&self.account, &owner).invoke()
     }
 }

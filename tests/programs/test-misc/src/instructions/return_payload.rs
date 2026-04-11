@@ -4,11 +4,11 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct ReturnPayloadInstruction<'info> {
-    pub program: &'info Program<TestMiscProgram>,
+pub struct ReturnPayloadInstruction {
+    pub program: Program<TestMiscProgram>,
 }
 
-impl<'info> ReturnPayloadInstruction<'info> {
+impl ReturnPayloadInstruction {
     #[inline(always)]
     pub fn handler(&self) -> Result<ReturnPayload, ProgramError> {
         Ok(RETURN_PAYLOAD_VALUE)

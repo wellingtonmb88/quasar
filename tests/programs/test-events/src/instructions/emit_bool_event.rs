@@ -1,11 +1,11 @@
 use {crate::events::BoolEvent, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct EmitBoolEvent<'info> {
-    pub signer: &'info Signer,
+pub struct EmitBoolEvent {
+    pub signer: Signer,
 }
 
-impl<'info> EmitBoolEvent<'info> {
+impl EmitBoolEvent {
     #[inline(always)]
     pub fn handler(&self, flag: bool) -> Result<(), ProgramError> {
         emit!(BoolEvent { flag });

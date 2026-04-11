@@ -2,11 +2,11 @@ use quasar_lang::prelude::*;
 
 /// Tests: "Account 'account' (index 0): must be signer with no duplicates"
 #[derive(Accounts)]
-pub struct HeaderNoDupSigner<'info> {
-    pub account: &'info Signer,
+pub struct HeaderNoDupSigner {
+    pub account: Signer,
 }
 
-impl<'info> HeaderNoDupSigner<'info> {
+impl HeaderNoDupSigner {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

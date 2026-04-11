@@ -4,17 +4,18 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct RevokeInterface<'info> {
-    pub authority: &'info Signer,
-    pub source: &'info mut InterfaceAccount<Token>,
-    pub token_program: &'info Interface<TokenInterface>,
+pub struct RevokeInterface {
+    pub authority: Signer,
+    #[account(mut)]
+    pub source: InterfaceAccount<Token>,
+    pub token_program: Interface<TokenInterface>,
 }
 
-impl<'info> RevokeInterface<'info> {
+impl RevokeInterface {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         self.token_program
-            .revoke(self.source, self.authority)
+            .revoke(&self.source, &self.authority)
             .invoke()
     }
 }

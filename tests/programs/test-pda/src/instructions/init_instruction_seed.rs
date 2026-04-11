@@ -4,15 +4,16 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct InitInstructionSeed<'info> {
-    pub payer: &'info mut Signer,
-    pub authority: &'info Signer,
-    #[account(init, payer = payer, seeds = ItemAccount::seeds(authority), bump)]
-    pub item: &'info mut Account<ItemAccount>,
-    pub system_program: &'info Program<System>,
+pub struct InitInstructionSeed {
+    #[account(mut)]
+    pub payer: Signer,
+    pub authority: Signer,
+    #[account(mut, init, payer = payer, seeds = ItemAccount::seeds(authority), bump)]
+    pub item: Account<ItemAccount>,
+    pub system_program: Program<System>,
 }
 
-impl<'info> InitInstructionSeed<'info> {
+impl InitInstructionSeed {
     #[inline(always)]
     pub fn handler(
         &mut self,

@@ -1,11 +1,11 @@
 use quasar_lang::prelude::*;
 
 #[derive(Accounts)]
-pub struct UncheckedAccountCheck<'info> {
-    pub account: &'info UncheckedAccount,
+pub struct UncheckedAccountCheck {
+    pub account: UncheckedAccount,
 }
 
-impl<'info> UncheckedAccountCheck<'info> {
+impl UncheckedAccountCheck {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

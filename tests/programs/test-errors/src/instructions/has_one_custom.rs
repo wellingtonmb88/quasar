@@ -4,13 +4,13 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct HasOneCustom<'info> {
-    pub authority: &'info Signer,
+pub struct HasOneCustom {
+    pub authority: Signer,
     #[account(has_one = authority @ TestError::Hello)]
-    pub account: &'info Account<ErrorTestAccount>,
+    pub account: Account<ErrorTestAccount>,
 }
 
-impl<'info> HasOneCustom<'info> {
+impl HasOneCustom {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

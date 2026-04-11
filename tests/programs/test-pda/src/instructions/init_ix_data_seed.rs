@@ -5,15 +5,16 @@ use {
 
 #[derive(Accounts)]
 #[instruction(index: u64)]
-pub struct InitIxDataSeed<'info> {
-    pub payer: &'info mut Signer,
-    pub authority: &'info Signer,
-    #[account(init, payer = payer, seeds = IndexedAccount::seeds(authority, index), bump)]
-    pub item: &'info mut Account<IndexedAccount>,
-    pub system_program: &'info Program<System>,
+pub struct InitIxDataSeed {
+    #[account(mut)]
+    pub payer: Signer,
+    pub authority: Signer,
+    #[account(mut, init, payer = payer, seeds = IndexedAccount::seeds(authority, index), bump)]
+    pub item: Account<IndexedAccount>,
+    pub system_program: Program<System>,
 }
 
-impl<'info> InitIxDataSeed<'info> {
+impl InitIxDataSeed {
     #[inline(always)]
     pub fn handler(&mut self, index: u64, bumps: &InitIxDataSeedBumps) -> Result<(), ProgramError> {
         self.item.set_inner(IndexedAccountInner {

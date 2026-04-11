@@ -5,19 +5,19 @@ use {
 
 /// Tests sweep + close — transfers all tokens, then closes the account.
 #[derive(Accounts)]
-pub struct SweepAndClose<'info> {
-    pub authority: &'info Signer,
-    #[account(sweep = receiver, close = destination, token::mint = mint, token::authority = authority)]
-    pub source: &'info mut Account<Token>,
+pub struct SweepAndClose {
+    pub authority: Signer,
+    #[account(mut, sweep = receiver, close = destination, token::mint = mint, token::authority = authority)]
+    pub source: Account<Token>,
     #[account(mut)]
-    pub receiver: &'info mut Account<Token>,
-    pub mint: &'info Account<Mint>,
+    pub receiver: Account<Token>,
+    pub mint: Account<Mint>,
     #[account(mut)]
-    pub destination: &'info mut UncheckedAccount,
-    pub token_program: &'info Program<Token>,
+    pub destination: UncheckedAccount,
+    pub token_program: Program<Token>,
 }
 
-impl<'info> SweepAndClose<'info> {
+impl SweepAndClose {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

@@ -1,12 +1,12 @@
 use {crate::state::ErrorTestAccount, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct TwoAccountsCheck<'info> {
-    pub first: &'info Account<ErrorTestAccount>,
-    pub second: &'info Account<ErrorTestAccount>,
+pub struct TwoAccountsCheck {
+    pub first: Account<ErrorTestAccount>,
+    pub second: Account<ErrorTestAccount>,
 }
 
-impl<'info> TwoAccountsCheck<'info> {
+impl TwoAccountsCheck {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

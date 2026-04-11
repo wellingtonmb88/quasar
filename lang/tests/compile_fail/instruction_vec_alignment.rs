@@ -6,8 +6,8 @@ solana_address::declare_id!("11111111111111111111111111111112");
 type Vec<T, const N: usize> = quasar_lang::dynamic::Vec<T, u32, N>;
 
 #[derive(Accounts)]
-pub struct Test<'info> {
-    pub signer: &'info Signer,
+pub struct Test {
+    pub signer: Signer,
 }
 
 #[instruction(discriminator = 0)]

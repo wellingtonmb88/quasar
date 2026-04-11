@@ -1,14 +1,15 @@
 use {crate::state::UserAccount, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct PdaTransfer<'info> {
-    pub authority: &'info Signer,
+pub struct PdaTransfer {
+    pub authority: Signer,
     #[account(mut, has_one = authority, seeds = UserAccount::seeds(authority), bump = pda.bump)]
-    pub pda: &'info mut Account<UserAccount>,
-    pub recipient: &'info mut SystemAccount,
+    pub pda: Account<UserAccount>,
+    #[account(mut)]
+    pub recipient: SystemAccount,
 }
 
-impl<'info> PdaTransfer<'info> {
+impl PdaTransfer {
     #[inline(always)]
     pub fn handler(&self, amount: u64) -> Result<(), ProgramError> {
         let pda_view = self.pda.to_account_view();

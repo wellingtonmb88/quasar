@@ -1,11 +1,11 @@
 use {crate::errors::TestError, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct CustomError<'info> {
-    pub signer: &'info Signer,
+pub struct CustomError {
+    pub signer: Signer,
 }
 
-impl<'info> CustomError<'info> {
+impl CustomError {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Err(TestError::Hello.into())

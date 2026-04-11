@@ -4,14 +4,14 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct ValidateMintInterfaceCheck<'info> {
+pub struct ValidateMintInterfaceCheck {
     #[account(mint::authority = mint_authority, mint::decimals = 6)]
-    pub mint: &'info InterfaceAccount<Mint>,
-    pub mint_authority: &'info Signer,
-    pub token_program: &'info Interface<TokenInterface>,
+    pub mint: InterfaceAccount<Mint>,
+    pub mint_authority: Signer,
+    pub token_program: Interface<TokenInterface>,
 }
 
-impl<'info> ValidateMintInterfaceCheck<'info> {
+impl ValidateMintInterfaceCheck {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

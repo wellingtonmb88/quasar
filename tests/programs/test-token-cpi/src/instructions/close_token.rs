@@ -7,18 +7,18 @@ use {
 /// The macro's epilogue calls `Account::close(dest)` which zeros the account,
 /// transfers lamports, and reassigns to the system program.
 #[derive(Accounts)]
-pub struct CloseToken<'info> {
-    pub authority: &'info Signer,
-    #[account(close = destination, token::mint = mint, token::authority = authority)]
-    pub token_account: &'info mut Account<Token>,
-    pub mint: &'info Account<Mint>,
+pub struct CloseToken {
+    pub authority: Signer,
+    #[account(mut, close = destination, token::mint = mint, token::authority = authority)]
+    pub token_account: Account<Token>,
+    pub mint: Account<Mint>,
     /// CHECK: destination may alias authority (close sends lamports to it).
     #[account(mut, dup)]
-    pub destination: &'info mut UncheckedAccount,
-    pub token_program: &'info Program<Token>,
+    pub destination: UncheckedAccount,
+    pub token_program: Program<Token>,
 }
 
-impl<'info> CloseToken<'info> {
+impl CloseToken {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

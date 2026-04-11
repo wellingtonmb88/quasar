@@ -4,15 +4,16 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct InitMintPdaT22<'info> {
-    pub payer: &'info mut Signer,
-    #[account(init, seeds = [b"mint", payer], bump, mint::decimals = 6, mint::authority = payer)]
-    pub mint: &'info mut Account<Mint2022>,
-    pub token_program: &'info Program<Token2022>,
-    pub system_program: &'info Program<System>,
+pub struct InitMintPdaT22 {
+    #[account(mut)]
+    pub payer: Signer,
+    #[account(mut, init, seeds = [b"mint", payer], bump, mint::decimals = 6, mint::authority = payer)]
+    pub mint: Account<Mint2022>,
+    pub token_program: Program<Token2022>,
+    pub system_program: Program<System>,
 }
 
-impl<'info> InitMintPdaT22<'info> {
+impl InitMintPdaT22 {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

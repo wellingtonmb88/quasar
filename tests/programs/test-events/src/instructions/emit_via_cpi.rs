@@ -4,13 +4,13 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct EmitViaCpi<'info> {
-    pub signer: &'info Signer,
-    pub event_authority: &'info EventAuthority,
-    pub program: &'info Program<QuasarTestEvents>,
+pub struct EmitViaCpi {
+    pub signer: Signer,
+    pub event_authority: EventAuthority,
+    pub program: Program<QuasarTestEvents>,
 }
 
-impl<'info> EmitViaCpi<'info> {
+impl EmitViaCpi {
     #[inline(always)]
     pub fn handler(&self, value: u64) -> Result<(), ProgramError> {
         emit_cpi!(SimpleEvent { value })?;

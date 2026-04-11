@@ -4,17 +4,17 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct ReadClockFullFromAccount<'info> {
-    pub _payer: &'info Signer,
+pub struct ReadClockFullFromAccount {
+    pub _payer: Signer,
     #[account(mut)]
-    pub snapshot: &'info mut Account<ClockFullSnapshot>,
-    pub clock: &'info Sysvar<Clock>,
+    pub snapshot: Account<ClockFullSnapshot>,
+    pub clock: Sysvar<Clock>,
 }
 
-impl<'info> ReadClockFullFromAccount<'info> {
+impl ReadClockFullFromAccount {
     #[inline(always)]
     pub fn handler(&mut self) -> Result<(), ProgramError> {
-        let clock = self.clock;
+        let clock = &self.clock;
         self.snapshot.set_inner(ClockFullSnapshotInner {
             slot: clock.slot.get(),
             epoch_start_timestamp: clock.epoch_start_timestamp.get(),

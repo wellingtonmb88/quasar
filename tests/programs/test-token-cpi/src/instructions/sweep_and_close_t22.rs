@@ -4,19 +4,19 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct SweepAndCloseT22<'info> {
-    pub authority: &'info Signer,
-    #[account(sweep = receiver, close = destination, token::mint = mint, token::authority = authority)]
-    pub source: &'info mut Account<Token2022>,
+pub struct SweepAndCloseT22 {
+    pub authority: Signer,
+    #[account(mut, sweep = receiver, close = destination, token::mint = mint, token::authority = authority)]
+    pub source: Account<Token2022>,
     #[account(mut)]
-    pub receiver: &'info mut Account<Token2022>,
-    pub mint: &'info Account<Mint2022>,
+    pub receiver: Account<Token2022>,
+    pub mint: Account<Mint2022>,
     #[account(mut)]
-    pub destination: &'info mut UncheckedAccount,
-    pub token_program: &'info Program<Token2022>,
+    pub destination: UncheckedAccount,
+    pub token_program: Program<Token2022>,
 }
 
-impl<'info> SweepAndCloseT22<'info> {
+impl SweepAndCloseT22 {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

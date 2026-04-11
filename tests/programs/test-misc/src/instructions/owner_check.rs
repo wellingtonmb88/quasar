@@ -1,11 +1,11 @@
 use {crate::state::SimpleAccount, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct OwnerCheck<'info> {
-    pub account: &'info Account<SimpleAccount>,
+pub struct OwnerCheck {
+    pub account: Account<SimpleAccount>,
 }
 
-impl<'info> OwnerCheck<'info> {
+impl OwnerCheck {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

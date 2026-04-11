@@ -1,11 +1,11 @@
 use quasar_lang::prelude::*;
 
 #[derive(Accounts)]
-pub struct OptionAddressSome<'info> {
-    pub signer: &'info Signer,
+pub struct OptionAddressSome {
+    pub signer: Signer,
 }
 
-impl<'info> OptionAddressSome<'info> {
+impl OptionAddressSome {
     #[inline(always)]
     pub fn handler(&self, addr: Option<Address>) -> Result<(), ProgramError> {
         require!(addr.is_some(), ProgramError::InvalidInstructionData);

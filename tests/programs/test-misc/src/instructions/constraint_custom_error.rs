@@ -4,12 +4,12 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct ConstraintCustomError<'info> {
+pub struct ConstraintCustomError {
     #[account(constraint = account.value > 0 @ TestError::CustomConstraint)]
-    pub account: &'info Account<SimpleAccount>,
+    pub account: Account<SimpleAccount>,
 }
 
-impl<'info> ConstraintCustomError<'info> {
+impl ConstraintCustomError {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

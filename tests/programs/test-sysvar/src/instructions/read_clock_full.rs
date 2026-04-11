@@ -7,14 +7,15 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct ReadClockFull<'info> {
-    pub payer: &'info mut Signer,
-    #[account(init, payer = payer, seeds = ClockFullSnapshot::seeds(), bump)]
-    pub snapshot: &'info mut Account<ClockFullSnapshot>,
-    pub system_program: &'info Program<System>,
+pub struct ReadClockFull {
+    #[account(mut)]
+    pub payer: Signer,
+    #[account(mut, init, payer = payer, seeds = ClockFullSnapshot::seeds(), bump)]
+    pub snapshot: Account<ClockFullSnapshot>,
+    pub system_program: Program<System>,
 }
 
-impl<'info> ReadClockFull<'info> {
+impl ReadClockFull {
     #[inline(always)]
     pub fn handler(&mut self) -> Result<(), ProgramError> {
         let clock = Clock::get()?;

@@ -5,19 +5,21 @@ use quasar_spl::{Mint, Token, Token2022};
 solana_address::declare_id!("11111111111111111111111111111112");
 
 #[derive(Accounts)]
-pub struct BadMintProgramSelector<'info> {
-    pub payer: &'info mut Signer,
-    pub mint_authority: &'info Signer,
+pub struct BadMintProgramSelector {
+    #[account(mut)]
+    pub payer: Signer,
+    pub mint_authority: Signer,
     #[account(
+        mut,
         init,
         payer = payer,
         mint::decimals = 6,
         mint::authority = mint_authority,
     )]
-    pub mint: &'info mut Account<Mint>,
-    pub token_program: &'info Program<Token>,
-    pub token_program_2022: &'info Program<Token2022>,
-    pub system_program: &'info Program<System>,
+    pub mint: Account<Mint>,
+    pub token_program: Program<Token>,
+    pub token_program_2022: Program<Token2022>,
+    pub system_program: Program<System>,
 }
 
 fn main() {}

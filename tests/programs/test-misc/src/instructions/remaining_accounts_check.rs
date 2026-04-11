@@ -1,11 +1,11 @@
 use quasar_lang::{prelude::*, remaining::RemainingAccounts};
 
 #[derive(Accounts)]
-pub struct RemainingAccountsCheck<'info> {
-    pub authority: &'info Signer,
+pub struct RemainingAccountsCheck {
+    pub authority: Signer,
 }
 
-impl<'info> RemainingAccountsCheck<'info> {
+impl RemainingAccountsCheck {
     #[inline(always)]
     pub fn handler(&self, remaining: RemainingAccounts) -> Result<(), ProgramError> {
         for account in remaining.iter() {

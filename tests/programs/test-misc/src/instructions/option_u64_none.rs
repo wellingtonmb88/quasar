@@ -1,11 +1,11 @@
 use quasar_lang::prelude::*;
 
 #[derive(Accounts)]
-pub struct OptionU64None<'info> {
-    pub signer: &'info Signer,
+pub struct OptionU64None {
+    pub signer: Signer,
 }
 
-impl<'info> OptionU64None<'info> {
+impl OptionU64None {
     #[inline(always)]
     pub fn handler(&self, value: Option<u64>) -> Result<(), ProgramError> {
         require!(value.is_none(), ProgramError::InvalidInstructionData);

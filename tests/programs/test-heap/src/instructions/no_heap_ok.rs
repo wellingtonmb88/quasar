@@ -1,11 +1,11 @@
 use quasar_lang::prelude::*;
 
 #[derive(Accounts)]
-pub struct NoHeapOk<'info> {
-    pub signer: &'info Signer,
+pub struct NoHeapOk {
+    pub signer: Signer,
 }
 
-impl<'info> NoHeapOk<'info> {
+impl NoHeapOk {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

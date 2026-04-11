@@ -4,11 +4,11 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct CpiInvokeWithReturn<'info> {
-    pub program: &'info Program<TestMiscProgram>,
+pub struct CpiInvokeWithReturn {
+    pub program: Program<TestMiscProgram>,
 }
 
-impl<'info> CpiInvokeWithReturn<'info> {
+impl CpiInvokeWithReturn {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         let ret = quasar_lang::cpi::CpiCall::<1, 1>::new(

@@ -4,11 +4,11 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct EmitTwoEvents<'info> {
-    pub signer: &'info Signer,
+pub struct EmitTwoEvents {
+    pub signer: Signer,
 }
 
-impl<'info> EmitTwoEvents<'info> {
+impl EmitTwoEvents {
     #[inline(always)]
     pub fn handler(&self, first: u64, second: u64) -> Result<(), ProgramError> {
         emit!(SimpleEvent { value: first });

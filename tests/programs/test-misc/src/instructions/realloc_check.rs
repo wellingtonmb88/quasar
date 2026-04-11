@@ -2,15 +2,15 @@ use {crate::state::SimpleAccount, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
 #[instruction(new_space: u64)]
-pub struct ReallocCheck<'info> {
-    #[account(realloc = new_space as usize)]
-    pub account: &'info mut Account<SimpleAccount>,
+pub struct ReallocCheck {
+    #[account(mut, realloc = new_space as usize)]
+    pub account: Account<SimpleAccount>,
     #[account(mut)]
-    pub payer: &'info mut Signer,
-    pub system_program: &'info Program<System>,
+    pub payer: Signer,
+    pub system_program: Program<System>,
 }
 
-impl<'info> ReallocCheck<'info> {
+impl ReallocCheck {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

@@ -4,14 +4,15 @@ use {
 };
 
 #[derive(Accounts)]
-pub struct ExplicitPayer<'info> {
-    pub funder: &'info mut Signer,
-    #[account(init, payer = funder, seeds = ExplicitPayerAccount::seeds(funder), bump)]
-    pub account: &'info mut Account<ExplicitPayerAccount>,
-    pub system_program: &'info Program<System>,
+pub struct ExplicitPayer {
+    #[account(mut)]
+    pub funder: Signer,
+    #[account(mut, init, payer = funder, seeds = ExplicitPayerAccount::seeds(funder), bump)]
+    pub account: Account<ExplicitPayerAccount>,
+    pub system_program: Program<System>,
 }
 
-impl<'info> ExplicitPayer<'info> {
+impl ExplicitPayer {
     #[inline(always)]
     pub fn handler(&mut self, value: u64, bumps: &ExplicitPayerBumps) -> Result<(), ProgramError> {
         self.account.set_inner(ExplicitPayerAccountInner {

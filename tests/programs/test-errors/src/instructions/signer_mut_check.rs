@@ -1,11 +1,12 @@
 use quasar_lang::prelude::*;
 
 #[derive(Accounts)]
-pub struct SignerMutCheck<'info> {
-    pub signer: &'info mut Signer,
+pub struct SignerMutCheck {
+    #[account(mut)]
+    pub signer: Signer,
 }
 
-impl<'info> SignerMutCheck<'info> {
+impl SignerMutCheck {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())

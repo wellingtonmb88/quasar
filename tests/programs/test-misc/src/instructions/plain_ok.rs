@@ -1,11 +1,11 @@
 use {crate::state::TestMiscProgram, quasar_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct PlainOk<'info> {
-    pub program: &'info Program<TestMiscProgram>,
+pub struct PlainOk {
+    pub program: Program<TestMiscProgram>,
 }
 
-impl<'info> PlainOk<'info> {
+impl PlainOk {
     #[inline(always)]
     pub fn handler(&self) -> Result<(), ProgramError> {
         Ok(())
