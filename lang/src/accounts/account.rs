@@ -112,12 +112,35 @@ pub fn realloc_account(
     payer: &AccountView,
     rent: Option<&crate::sysvars::rent::Rent>,
 ) -> Result<(), ProgramError> {
-    let rent_exempt_lamports = if let Some(r) = rent {
-        r.try_minimum_balance(new_space)?
+    let r = if let Some(r) = rent {
+        r.clone()
     } else {
         use crate::sysvars::Sysvar;
-        crate::sysvars::rent::Rent::get()?.try_minimum_balance(new_space)?
+        crate::sysvars::rent::Rent::get()?
     };
+    realloc_account_raw(
+        view,
+        new_space,
+        payer,
+        r.lamports_per_byte(),
+        r.exemption_threshold_raw(),
+    )
+}
+
+/// Realloc an account using pre-extracted rent values.
+///
+/// Takes `(lamports_per_byte, threshold)` directly instead of a `Rent` struct.
+/// This is the canonical implementation — [`realloc_account`] delegates here.
+#[inline(always)]
+pub fn realloc_account_raw(
+    view: &mut AccountView,
+    new_space: usize,
+    payer: &AccountView,
+    rent_lpb: u64,
+    rent_threshold: u64,
+) -> Result<(), ProgramError> {
+    let rent_exempt_lamports =
+        crate::sysvars::rent::minimum_balance_raw(rent_lpb, rent_threshold, new_space as u64)?;
 
     let current_lamports = view.lamports();
 
