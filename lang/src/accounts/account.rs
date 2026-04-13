@@ -203,7 +203,7 @@ impl<T> Account<T> {
     }
 }
 
-impl<T: AsAccountView> Account<T> {
+impl<T: AsAccountView + crate::traits::StaticView> Account<T> {
     /// Resize this account's data region, adjusting lamports for
     /// rent-exemption.
     ///
@@ -216,8 +216,8 @@ impl<T: AsAccountView> Account<T> {
         rent: Option<&crate::sysvars::rent::Rent>,
     ) -> Result<(), ProgramError> {
         // SAFETY: `Account<T>` is `#[repr(transparent)]` over `T`, and `T`
-        // is `#[repr(transparent)]` over `AccountView`. The cast preserves
-        // the pointer to the underlying `AccountView`.
+        // implements `StaticView` which guarantees `#[repr(transparent)]`
+        // over `AccountView`. The cast preserves the pointer.
         let view = unsafe { &mut *(self as *mut Account<T> as *mut AccountView) };
         realloc_account(view, new_space, payer, rent)
     }

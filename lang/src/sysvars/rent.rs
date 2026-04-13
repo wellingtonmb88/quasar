@@ -71,16 +71,14 @@ impl Rent {
     /// Returns the raw exemption threshold as a `u64` (bit representation
     /// of the f64 threshold). Compare against [`CURRENT_EXEMPTION_THRESHOLD`]
     /// or [`SIMD0194_EXEMPTION_THRESHOLD`].
+    ///
+    /// # Safety (internal)
+    ///
+    /// `exemption_threshold` is a `[u8; 8]` — reading it as u64 via
+    /// `read_unaligned` is always valid. The f64 threshold lives in the
+    /// sysvar but is reinterpreted as u64 for bit-exact comparison.
     #[inline(always)]
     pub fn exemption_threshold_raw(&self) -> u64 {
-        self.exemption_threshold_u64()
-    }
-
-    #[inline(always)]
-    fn exemption_threshold_u64(&self) -> u64 {
-        // SAFETY: `exemption_threshold` is a `[u8; 8]` — reading it as u64
-        // via `read_unaligned` is always valid. The f64 threshold lives in
-        // the sysvar but is reinterpreted as u64 for bit-exact comparison.
         unsafe { core::ptr::read_unaligned(self.exemption_threshold.as_ptr() as *const u64) }
     }
 
@@ -93,7 +91,7 @@ impl Rent {
     #[inline(always)]
     pub fn minimum_balance_unchecked(&self, data_len: usize) -> u64 {
         let lamports_per_byte = self.lamports_per_byte.get();
-        let threshold = self.exemption_threshold_u64();
+        let threshold = self.exemption_threshold_raw();
         self.minimum_balance_inner(data_len, lamports_per_byte, threshold)
     }
 
@@ -140,7 +138,7 @@ impl Rent {
         }
 
         let lamports_per_byte = self.lamports_per_byte.get();
-        let threshold = self.exemption_threshold_u64();
+        let threshold = self.exemption_threshold_raw();
         if unlikely(lamports_per_byte > CURRENT_MAX_LAMPORTS_PER_BYTE) {
             if threshold == CURRENT_EXEMPTION_THRESHOLD {
                 return Err(ProgramError::InvalidArgument);
@@ -159,6 +157,11 @@ impl Rent {
 ///
 /// Standalone function for use in codegen where the full `Rent` struct
 /// is destructured into its `u64` components.
+///
+/// Assumes only two known thresholds exist on mainnet:
+/// `CURRENT_EXEMPTION_THRESHOLD` (2.0) and `SIMD0194_EXEMPTION_THRESHOLD`
+/// (1.0). The else branch defaults to `2x` (current threshold behavior). If a
+/// third threshold is ever introduced, this function must be updated.
 #[allow(clippy::collapsible_if)]
 #[inline(always)]
 pub fn minimum_balance_raw(
@@ -183,6 +186,10 @@ pub fn minimum_balance_raw(
     if threshold == SIMD0194_EXEMPTION_THRESHOLD {
         Ok(total_bytes * lamports_per_byte)
     } else {
+        debug_assert!(
+            threshold == CURRENT_EXEMPTION_THRESHOLD,
+            "minimum_balance_raw: unknown exemption threshold"
+        );
         Ok(2 * total_bytes * lamports_per_byte)
     }
 }

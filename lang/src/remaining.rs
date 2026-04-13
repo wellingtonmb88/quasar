@@ -178,16 +178,6 @@ impl<'a> RemainingAccounts<'a> {
     /// `MAX_REMAINING_ACCOUNTS` are accessed via the iterator.
     #[inline(always)]
     pub fn iter(&self) -> RemainingIter<'a> {
-        // Seed bloom eagerly for strict mode. The cost is ~2 CU per
-        // declared account. This avoids a per-tick bool check in next().
-        let mut bloom = [0u64; 4];
-        if self.mode == RemainingMode::Strict {
-            for view in self.declared.iter() {
-                let [(i0, b0), (i1, b1)] = bloom_hash(view.address());
-                bloom[i0] |= b0;
-                bloom[i1] |= b1;
-            }
-        }
         RemainingIter {
             ptr: self.ptr,
             boundary: self.boundary,
@@ -195,7 +185,6 @@ impl<'a> RemainingAccounts<'a> {
             mode: self.mode,
             index: 0,
             cache: core::mem::MaybeUninit::uninit(),
-            bloom,
         }
     }
 }
@@ -266,26 +255,6 @@ pub struct RemainingIter<'a> {
     index: usize,
     /// Cache of yielded views. Elements `0..index` are initialized.
     cache: core::mem::MaybeUninit<[AccountView; MAX_REMAINING_ACCOUNTS]>,
-    /// 256-bit bloom filter for fast-reject in `has_seen_address`. Seeded
-    /// eagerly in `iter()` with declared account addresses, then updated
-    /// on each yield. False positives fall through to the exact `keys_eq`
-    /// scan; false negatives are impossible (all inserted addresses set
-    /// their bit).
-    bloom: [u64; 4],
-}
-
-/// Hash an address into two (bucket, bit) pairs for the 256-bit bloom filter.
-///
-/// Uses `b[0]^b[16]` and `b[1]^b[17]` — two independent 8-bit hashes from
-/// uniformly distributed Solana pubkeys. Setting two bits per address reduces
-/// false positives from ~22% to ~6% at 64 entries (3.8x improvement), at a
-/// cost of ~3 CU per check/insert for the second hash.
-#[inline(always)]
-fn bloom_hash(addr: &solana_address::Address) -> [(usize, u64); 2] {
-    let b = addr.as_array();
-    let h0 = (b[0] as usize) ^ (b[16] as usize);
-    let h1 = (b[1] as usize) ^ (b[17] as usize);
-    [(h0 >> 6, 1u64 << (h0 & 63)), (h1 >> 6, 1u64 << (h1 & 63))]
 }
 
 impl RemainingIter<'_> {
@@ -299,16 +268,13 @@ impl RemainingIter<'_> {
         self.cache.as_mut_ptr() as *mut AccountView
     }
 
+    /// Linear scan for duplicate address detection.
+    ///
+    /// Checks declared accounts and previously yielded remaining accounts.
+    /// For typical remaining account counts (<10), this is cheaper than a
+    /// bloom filter which adds per-iteration hash + check + update overhead.
     #[inline(always)]
     fn has_seen_address(&self, address: &solana_address::Address) -> bool {
-        // Fast-reject via 2-hash bloom filter: both bits must be set for
-        // a bloom hit. Short-circuit on first miss.
-        let [(i0, b0), (i1, b1)] = bloom_hash(address);
-        if self.bloom[i0] & b0 == 0 || self.bloom[i1] & b1 == 0 {
-            return false;
-        }
-
-        // Bloom hit — could be a false positive. Do the exact scan.
         if self
             .declared
             .iter()
@@ -345,111 +311,52 @@ impl RemainingIter<'_> {
     }
 }
 
-#[cold]
-#[inline(never)]
-fn remaining_overflow_error() -> ProgramError {
-    QuasarError::RemainingAccountsOverflow.into()
-}
+impl Iterator for RemainingIter<'_> {
+    type Item = Result<AccountView, ProgramError>;
 
-#[cold]
-#[inline(never)]
-fn remaining_dup_error() -> ProgramError {
-    QuasarError::RemainingAccountDuplicate.into()
-}
-
-impl RemainingIter<'_> {
-    /// Shared preamble: boundary + overflow check.
-    /// Returns `None` if at end, `Some(Err)` on overflow, `Some(Ok(raw))` to
-    /// proceed.
-    #[inline(always)]
-    fn preamble(&mut self) -> Option<Result<*mut RuntimeAccount, ProgramError>> {
+    fn next(&mut self) -> Option<Self::Item> {
         if self.ptr as *const u8 >= self.boundary {
             return None;
         }
         if crate::utils::hint::unlikely(self.index >= MAX_REMAINING_ACCOUNTS) {
             self.ptr = self.boundary as *mut u8;
-            return Some(Err(remaining_overflow_error()));
+            return Some(Err(QuasarError::RemainingAccountsOverflow.into()));
         }
-        Some(Ok(self.ptr as *mut RuntimeAccount))
-    }
 
-    /// Cache the view and advance the index.
-    #[inline(always)]
-    fn cache_and_advance(&mut self, view: &AccountView) {
-        // SAFETY: `self.index < MAX_REMAINING_ACCOUNTS` (checked in preamble).
-        unsafe {
-            let copy = core::ptr::read(view);
-            core::ptr::write(self.cache_mut_ptr().add(self.index), copy);
-        }
-        self.index = self.index.wrapping_add(1);
-    }
-
-    /// Strict mode: reject dup SVM entries, check seen-address, update bloom.
-    #[inline(always)]
-    fn next_strict(&mut self) -> Option<Result<AccountView, ProgramError>> {
-        let raw = match self.preamble()? {
-            Ok(r) => r,
-            Err(e) => return Some(Err(e)),
-        };
+        let raw = self.ptr as *mut RuntimeAccount;
+        // SAFETY: `ptr` is within the SVM buffer (boundary check above).
         let borrow = unsafe { (*raw).borrow_state };
 
         let view = if borrow == NOT_BORROWED {
-            let view = unsafe { AccountView::new_unchecked(raw) };
-            self.ptr = unsafe { advance_past_account(self.ptr, raw) };
-            view
-        } else {
-            // Strict mode: duplicate SVM entry is an error.
-            self.ptr = self.boundary as *mut u8;
-            return Some(Err(remaining_dup_error()));
-        };
-
-        if self.has_seen_address(view.address()) {
-            self.ptr = self.boundary as *mut u8;
-            return Some(Err(remaining_dup_error()));
-        }
-
-        let [(i0, b0), (i1, b1)] = bloom_hash(view.address());
-        self.bloom[i0] |= b0;
-        self.bloom[i1] |= b1;
-
-        self.cache_and_advance(&view);
-        Some(Ok(view))
-    }
-
-    /// Passthrough mode: resolve dups, no bloom checks.
-    #[inline(always)]
-    fn next_passthrough(&mut self) -> Option<Result<AccountView, ProgramError>> {
-        let raw = match self.preamble()? {
-            Ok(r) => r,
-            Err(e) => return Some(Err(e)),
-        };
-        let borrow = unsafe { (*raw).borrow_state };
-
-        let view = if borrow == NOT_BORROWED {
+            // SAFETY: Non-duplicate entry with a valid `RuntimeAccount`.
             let view = unsafe { AccountView::new_unchecked(raw) };
             self.ptr = unsafe { advance_past_account(self.ptr, raw) };
             view
         } else {
             self.ptr = unsafe { advance_past_dup(self.ptr) };
+            if self.mode == RemainingMode::Strict {
+                self.ptr = self.boundary as *mut u8;
+                return Some(Err(QuasarError::RemainingAccountDuplicate.into()));
+            }
             match self.resolve_dup(borrow as usize) {
                 Some(v) => v,
-                None => return Some(Err(remaining_dup_error())),
+                None => return Some(Err(QuasarError::RemainingAccountDuplicate.into())),
             }
         };
 
-        self.cache_and_advance(&view);
-        Some(Ok(view))
-    }
-}
-
-impl Iterator for RemainingIter<'_> {
-    type Item = Result<AccountView, ProgramError>;
-
-    #[inline(always)]
-    fn next(&mut self) -> Option<Self::Item> {
-        match self.mode {
-            RemainingMode::Strict => self.next_strict(),
-            RemainingMode::Passthrough => self.next_passthrough(),
+        if self.mode == RemainingMode::Strict && self.has_seen_address(view.address()) {
+            self.ptr = self.boundary as *mut u8;
+            return Some(Err(QuasarError::RemainingAccountDuplicate.into()));
         }
+
+        // SAFETY: `self.index < MAX_REMAINING_ACCOUNTS` (checked above),
+        // so the write is within the `MaybeUninit` cache allocation.
+        // `ptr::read` creates a bitwise copy (AccountView is not Copy).
+        unsafe {
+            let copy = core::ptr::read(&view);
+            core::ptr::write(self.cache_mut_ptr().add(self.index), copy);
+        }
+        self.index = self.index.wrapping_add(1);
+        Some(Ok(view))
     }
 }
